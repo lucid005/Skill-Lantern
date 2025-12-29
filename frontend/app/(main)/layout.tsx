@@ -1,16 +1,17 @@
-"use client"
+"use client";
 
 import Navbar from "@/components/Navbar";
-import Home from "./home/page";
 import Footer from "@/components/Footer";
 
-export default function page() {
+export default function MainLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="grow">
-        <Home />
-      </main>
+      <main className="grow mt-20">{children}</main>
       <Footer />
     </div>
   );

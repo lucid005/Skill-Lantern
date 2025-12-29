@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/dist/client/link";
+
 export default function Footer() {
   return (
     <footer className="m-[50px] grid grid-cols-3 grid-rows-2 h-[600px]">
@@ -9,17 +11,17 @@ export default function Footer() {
       <div className="border-b border-r border-t p-5 w-full h-full flex flex-col justify-between">
         <h3 className="footer-h">Links</h3>
         <ul className="text-[#555551]">
-          <li>Features</li>
-          <li>How it Works</li>
-          <li>Contact</li>
+          <li><Link href="/features">Features</Link></li>
+          <li><Link href="/howitworks">How it Works</Link></li>
+          <li><Link href="/contact">Contact</Link></li>
         </ul>
       </div>
       <div className="border-b border-r border-t rounded-tr-xl p-5 w-full h-full flex flex-col justify-between">
         <h3 className="footer-h">Sections</h3>
         <ul className="text-[#555551]">
-          <li>About Skill Lantern</li>
-          <li>Why Choose Skill Lantern</li>
-          <li>Join Skill Lantern Now</li>
+          <li><Link href="#About">About Skill Lantern</Link></li>
+          <li><Link href="#Why">Why Choose Skill Lantern</Link></li>
+          <li><Link href="#Join">Join Skill Lantern Now</Link></li>
         </ul>
       </div>
       <div className="border-b border-r border-l rounded-bl-xl p-5 w-full h-full flex flex-col justify-end space-y-5 text-[#555551]">

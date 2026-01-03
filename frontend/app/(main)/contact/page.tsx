@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GSAPSection, GSAPStagger } from "@/components/GSAPAnimations";
+import { MotionSection, MotionStagger } from "@/components/MotionAnimations";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -72,7 +72,7 @@ export default function Contact() {
       {/* Hero Section */}
       <section className="section-padding">
         <div className="container-custom text-center">
-          <GSAPSection className="max-w-3xl mx-auto">
+          <MotionSection className="max-w-3xl mx-auto">
             <div className="badge mb-6">Get In Touch</div>
             <h1 className="text-4xl md:text-5xl font-semibold mb-6">
               We&apos;d Love to
@@ -82,14 +82,14 @@ export default function Contact() {
             <p className="text-lg text-neutral-600 leading-relaxed">
               Have questions about Skill Lantern? Need help with your career journey? Our team is here to help you every step of the way.
             </p>
-          </GSAPSection>
+          </MotionSection>
         </div>
       </section>
 
       {/* Contact Info Cards */}
       <section className="pb-16">
         <div className="container-custom">
-          <GSAPStagger className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto" stagger={0.1}>
+          <MotionStagger className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto" stagger={0.1}>
             {contactInfo.map((info, index) => (
               <div
                 key={index}
@@ -111,7 +111,7 @@ export default function Contact() {
                 )}
               </div>
             ))}
-          </GSAPStagger>
+          </MotionStagger>
         </div>
       </section>
 
@@ -120,7 +120,7 @@ export default function Contact() {
         <div className="container-custom">
           <div className="grid lg:grid-cols-2 gap-16 max-w-6xl mx-auto">
             {/* Left Side - Info */}
-            <GSAPSection animation="fade-right">
+            <MotionSection animation="fade-right">
               <h2 className="text-3xl font-semibold mb-6">
                 Send Us a Message
               </h2>
@@ -171,10 +171,10 @@ export default function Contact() {
                   </div>
                 </div>
               </div>
-            </GSAPSection>
+            </MotionSection>
 
             {/* Right Side - Form */}
-            <GSAPSection animation="fade-left" delay={0.1} className="bg-white rounded-2xl p-8 border border-neutral-200">
+            <MotionSection animation="fade-left" delay={0.1} className="bg-white rounded-2xl p-8 border border-neutral-200">
               {submitted ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -292,7 +292,7 @@ export default function Contact() {
                   </button>
                 </form>
               )}
-            </GSAPSection>
+            </MotionSection>
           </div>
         </div>
       </section>

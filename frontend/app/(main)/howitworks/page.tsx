@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GSAPSection, GSAPStagger } from "@/components/GSAPAnimations";
+import { MotionSection, MotionStagger } from "@/components/MotionAnimations";
 
 export default function HowItWorks() {
   const steps = [
@@ -127,7 +127,7 @@ export default function HowItWorks() {
       {/* Hero Section */}
       <section className="section-padding">
         <div className="container-custom text-center">
-          <GSAPSection className="max-w-3xl mx-auto">
+          <MotionSection className="max-w-3xl mx-auto">
             <div className="badge mb-6">Simple Process</div>
             <h1 className="text-4xl md:text-5xl font-semibold mb-6">
               How Skill Lantern
@@ -137,7 +137,7 @@ export default function HowItWorks() {
             <p className="text-lg text-neutral-600 leading-relaxed">
               From profile creation to career success—discover our simple, effective process that guides you every step of the way.
             </p>
-          </GSAPSection>
+          </MotionSection>
         </div>
       </section>
 
@@ -146,7 +146,7 @@ export default function HowItWorks() {
         <div className="container-custom">
           <div className="max-w-4xl mx-auto">
             {steps.map((step, index) => (
-              <GSAPSection
+              <MotionSection
                 key={index}
                 animation="fade-up"
                 delay={index * 0.05}
@@ -199,7 +199,7 @@ export default function HowItWorks() {
                     </ul>
                   </div>
                 </div>
-              </GSAPSection>
+              </MotionSection>
             ))}
           </div>
         </div>
@@ -209,16 +209,16 @@ export default function HowItWorks() {
       <section className="section-padding">
         <div className="container-custom">
           <div className="max-w-3xl mx-auto">
-            <GSAPSection className="text-center mb-12">
+            <MotionSection className="text-center mb-12">
               <h2 className="text-3xl font-semibold mb-4">
                 Frequently Asked Questions
               </h2>
               <p className="text-neutral-600">
                 Got questions? We&apos;ve got answers.
               </p>
-            </GSAPSection>
+            </MotionSection>
 
-            <GSAPStagger className="space-y-4" stagger={0.08}>
+            <MotionStagger className="space-y-4" stagger={0.08}>
               {faqs.map((faq, index) => (
                 <div
                   key={index}
@@ -228,7 +228,7 @@ export default function HowItWorks() {
                   <p className="text-neutral-600">{faq.answer}</p>
                 </div>
               ))}
-            </GSAPStagger>
+            </MotionStagger>
           </div>
         </div>
       </section>
@@ -236,7 +236,7 @@ export default function HowItWorks() {
       {/* CTA Section */}
       <section className="section-padding bg-neutral-900 text-white">
         <div className="container-custom text-center">
-          <GSAPSection animation="scale" className="max-w-2xl mx-auto">
+          <MotionSection animation="scale" className="max-w-2xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-semibold mb-6">
               Ready to Start Your Journey?
             </h2>
@@ -262,7 +262,7 @@ export default function HowItWorks() {
                 />
               </svg>
             </Link>
-          </GSAPSection>
+          </MotionSection>
         </div>
       </section>
     </main>

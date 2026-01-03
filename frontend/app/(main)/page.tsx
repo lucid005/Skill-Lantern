@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GSAPSection, GSAPStagger } from "@/components/GSAPAnimations";
+import { MotionSection, MotionStagger } from "@/components/MotionAnimations";
 
 export default function Home() {
   const features = [
@@ -97,28 +97,28 @@ export default function Home() {
       <section id="hero" className="min-h-screen flex items-center justify-center section-padding pt-32 md:pt-40">
         <div className="container-custom text-center">
           <div className="max-w-4xl mx-auto">
-            <GSAPSection animation="fade-down" duration={0.6}>
+            <MotionSection animation="fade-down" duration={0.6}>
               <div className="badge mb-6">
                 <span className="mr-2">✨</span>
                 AI-Powered Career Recommendations
               </div>
-            </GSAPSection>
+            </MotionSection>
             
-            <GSAPSection animation="fade-up" duration={0.8} delay={0.1}>
+            <MotionSection animation="fade-up" duration={0.8} delay={0.1}>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight leading-tight mb-6">
                 Discover Your Perfect
                 <br />
                 <span className="gradient-text">Career Path</span>
               </h1>
-            </GSAPSection>
+            </MotionSection>
             
-            <GSAPSection animation="fade-up" duration={0.8} delay={0.2}>
+            <MotionSection animation="fade-up" duration={0.8} delay={0.2}>
               <p className="text-lg md:text-xl text-neutral-600 max-w-2xl mx-auto mb-10 leading-relaxed">
                 Skill Lantern uses advanced AI to analyze your skills, interests, and academic background to recommend the ideal career path tailored just for you.
               </p>
-            </GSAPSection>
+            </MotionSection>
             
-            <GSAPSection animation="fade-up" duration={0.8} delay={0.3}>
+            <MotionSection animation="fade-up" duration={0.8} delay={0.3}>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/registration/login" className="btn-primary btn-press text-base px-8 py-4 hover-lift">
                   Get Started Free
@@ -127,34 +127,34 @@ export default function Home() {
                   See How It Works
                 </Link>
               </div>
-            </GSAPSection>
+            </MotionSection>
           </div>
 
           {/* Stats Section */}
-          <GSAPStagger className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 pt-20 border-t border-neutral-200" stagger={0.1}>
+          <MotionStagger className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 pt-20 border-t border-neutral-200" stagger={0.1}>
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="text-3xl md:text-4xl font-semibold mb-2">{stat.value}</div>
                 <div className="text-sm text-neutral-500">{stat.label}</div>
               </div>
             ))}
-          </GSAPStagger>
+          </MotionStagger>
         </div>
       </section>
 
       {/* About Section */}
       <section className="section-padding bg-neutral-50" id="about">
         <div className="container-custom">
-          <GSAPSection className="max-w-3xl mx-auto text-center mb-16">
+          <MotionSection className="max-w-3xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-semibold mb-6">
               Why Skill Lantern?
             </h2>
             <p className="text-lg text-neutral-600 leading-relaxed">
               Students today don&apos;t just need information — they need personalized guidance that understands their individual strengths. Skill Lantern combines smart technology with real educational context to deliver meaningful career recommendations.
             </p>
-          </GSAPSection>
+          </MotionSection>
 
-          <GSAPStagger className="grid md:grid-cols-2 lg:grid-cols-3 gap-8" stagger={0.08}>
+          <MotionStagger className="grid md:grid-cols-2 lg:grid-cols-3 gap-8" stagger={0.08}>
             {features.map((feature, index) => (
               <div
                 key={index}
@@ -167,23 +167,23 @@ export default function Home() {
                 <p className="text-neutral-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
-          </GSAPStagger>
+          </MotionStagger>
         </div>
       </section>
 
       {/* How It Works Section */}
       <section className="section-padding" id="how-it-works">
         <div className="container-custom">
-          <GSAPSection className="max-w-3xl mx-auto text-center mb-16">
+          <MotionSection className="max-w-3xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-semibold mb-6">
               How It Works
             </h2>
             <p className="text-lg text-neutral-600 leading-relaxed">
               Getting your personalized career recommendation is simple. Follow these four easy steps to discover your ideal career path.
             </p>
-          </GSAPSection>
+          </MotionSection>
 
-          <GSAPStagger className="grid md:grid-cols-2 lg:grid-cols-4 gap-8" stagger={0.12}>
+          <MotionStagger className="grid md:grid-cols-2 lg:grid-cols-4 gap-8" stagger={0.12}>
             {steps.map((step, index) => (
               <div key={index} className="relative group bg-inherit">
                 <div className="text-6xl font-bold text-neutral-200 mb-4 group-hover:text-neutral-300 transition-colors">
@@ -197,7 +197,7 @@ export default function Home() {
                 )}
               </div>
             ))}
-          </GSAPStagger>
+          </MotionStagger>
         </div>
       </section>
 
@@ -205,7 +205,7 @@ export default function Home() {
       <section className="section-padding bg-neutral-900 text-white overflow-hidden">
         <div className="container-custom">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <GSAPSection animation="fade-right">
+            <MotionSection animation="fade-right">
               <h2 className="text-3xl md:text-4xl font-semibold mb-6">
                 Truly Personal, Not Generic
               </h2>
@@ -228,9 +228,9 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-            </GSAPSection>
+            </MotionSection>
             
-            <GSAPSection animation="fade-left" delay={0.2} className="bg-neutral-800 rounded-2xl p-8 lg:p-12">
+            <MotionSection animation="fade-left" delay={0.2} className="bg-neutral-800 rounded-2xl p-8 lg:p-12">
               <div className="space-y-6">
                 <div className="flex items-center gap-4 hover:translate-x-2 transition-transform">
                   <div className="w-12 h-12 bg-neutral-700 rounded-full flex items-center justify-center">
@@ -272,7 +272,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            </GSAPSection>
+            </MotionSection>
           </div>
         </div>
       </section>
@@ -280,16 +280,16 @@ export default function Home() {
       {/* Testimonials/Trust Section */}
       <section className="section-padding">
         <div className="container-custom">
-          <GSAPSection className="max-w-3xl mx-auto text-center mb-16">
+          <MotionSection className="max-w-3xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-semibold mb-6">
               Built for Students & Professionals
             </h2>
             <p className="text-lg text-neutral-600 leading-relaxed">
               Whether you&apos;re a student exploring career possibilities or a professional planning a career shift, Skill Lantern provides the clarity and direction you need.
             </p>
-          </GSAPSection>
+          </MotionSection>
 
-          <GSAPStagger className="grid md:grid-cols-3 gap-8" stagger={0.1}>
+          <MotionStagger className="grid md:grid-cols-3 gap-8" stagger={0.1}>
             <div className="bg-neutral-50 p-8 rounded-2xl hover-lift">
               <div className="text-4xl mb-4">🎓</div>
               <h3 className="text-lg font-semibold mb-3">For Students</h3>
@@ -313,14 +313,14 @@ export default function Home() {
                 Plan your career transition with confidence. Leverage your experience and learn what&apos;s needed for your next move.
               </p>
             </div>
-          </GSAPStagger>
+          </MotionStagger>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="section-padding bg-neutral-900 text-white">
         <div className="container-custom text-center">
-          <GSAPSection animation="scale" className="max-w-3xl mx-auto">
+          <MotionSection animation="scale" className="max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold mb-6">
               Ready to Discover Your Career Path?
             </h2>
@@ -341,7 +341,7 @@ export default function Home() {
             <p className="text-sm text-neutral-500 mt-6">
               No credit card required • Free forever for basic features
             </p>
-          </GSAPSection>
+          </MotionSection>
         </div>
       </section>
     </main>

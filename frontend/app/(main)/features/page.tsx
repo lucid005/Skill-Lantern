@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GSAPSection, GSAPStagger } from "@/components/GSAPAnimations";
+import { MotionSection, MotionStagger } from "@/components/MotionAnimations";
 
 export default function Features() {
   const mainFeatures = [
@@ -105,7 +105,7 @@ export default function Features() {
       {/* Hero Section */}
       <section className="section-padding">
         <div className="container-custom text-center">
-          <GSAPSection className="max-w-3xl mx-auto">
+          <MotionSection className="max-w-3xl mx-auto">
             <div className="badge mb-6">Platform Features</div>
             <h1 className="text-4xl md:text-5xl font-semibold mb-6">
               Everything You Need to
@@ -115,7 +115,7 @@ export default function Features() {
             <p className="text-lg text-neutral-600 leading-relaxed">
               Skill Lantern combines cutting-edge AI technology with comprehensive career data to deliver personalized guidance that helps you make confident career decisions.
             </p>
-          </GSAPSection>
+          </MotionSection>
         </div>
       </section>
 
@@ -124,7 +124,7 @@ export default function Features() {
         <div className="container-custom">
           <div className="space-y-24">
             {mainFeatures.map((feature, index) => (
-              <GSAPSection
+              <MotionSection
                 key={index}
                 animation={index % 2 === 0 ? "fade-right" : "fade-left"}
                 className={`grid lg:grid-cols-2 gap-12 items-center ${index % 2 === 1 ? "lg:flex-row-reverse" : ""}`}
@@ -167,7 +167,7 @@ export default function Features() {
                       <p className="text-sm">Feature Preview</p>
                     </div>
                   </div>
-              </GSAPSection>
+              </MotionSection>
             ))}
           </div>
         </div>
@@ -176,16 +176,16 @@ export default function Features() {
       {/* Additional Features Grid */}
       <section className="section-padding">
         <div className="container-custom">
-          <GSAPSection className="text-center mb-12">
+          <MotionSection className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-semibold mb-4">
               And Much More
             </h2>
             <p className="text-neutral-600 max-w-2xl mx-auto">
               Discover all the tools and features designed to help you succeed in your career journey.
             </p>
-          </GSAPSection>
+          </MotionSection>
 
-          <GSAPStagger className="grid md:grid-cols-2 lg:grid-cols-3 gap-8" stagger={0.08}>
+          <MotionStagger className="grid md:grid-cols-2 lg:grid-cols-3 gap-8" stagger={0.08}>
             {additionalFeatures.map((feature, index) => (
               <div
                 key={index}
@@ -196,14 +196,14 @@ export default function Features() {
                 <p className="text-neutral-600">{feature.description}</p>
               </div>
             ))}
-          </GSAPStagger>
+          </MotionStagger>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="section-padding bg-neutral-900 text-white">
         <div className="container-custom text-center">
-          <GSAPSection animation="scale" className="max-w-2xl mx-auto">
+          <MotionSection animation="scale" className="max-w-2xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-semibold mb-6">
               Ready to Explore These Features?
             </h2>
@@ -229,7 +229,7 @@ export default function Features() {
                 />
               </svg>
             </Link>
-          </GSAPSection>
+          </MotionSection>
         </div>
       </section>
     </main>

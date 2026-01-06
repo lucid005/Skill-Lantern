@@ -43,8 +43,11 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  password      String?   // For credentials auth
   accounts      Account[]
   sessions      Session[]
+  profile       UserProfile?
+  recommendations CareerRecommendation[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -55,4 +58,67 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// User Profile - stores form data from signup
+model UserProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Personal Info
+  fullName          String?
+  gender            String?
+  dateOfBirth       DateTime?
+  cityRegion        String?
+  
+  // Education
+  courseCategory    String?
+  course            String?
+  specialization    String?
+  schoolCollegeName String?
+  cgpa              Float?
+  
+  // Skills & Interests
+  interests         String[] @default([])
+  technicalSkills   String[] @default([])
+  softSkills        String[] @default([])
+  
+  // Certifications
+  hasCertification  Boolean  @default(false)
+  certifications    String?
+  
+  // Preferences
+  careerLifestyle   String?
+  workEnvironment   String?
+  locationPreference String?
+  learningStyle     String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// Career Recommendation - stores AI predictions and roadmap
+model CareerRecommendation {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Quick Predictions (from XGBoost)
+  predictions       Json     // Array of { career, confidence, description }
+  topCareer         String?
+  
+  // Full Details (from LLaMA) - populated when user requests details
+  roadmap           Json?    // { overview, stages, tools, job_roles, growth_paths }
+  colleges          Json?    // { recommendations, alternatives, notes }
+  summary           String?  @db.Text
+  immediateActions  String[] @default([])
+  
+  // Status
+  hasFullDetails    Boolean  @default(false)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
 }

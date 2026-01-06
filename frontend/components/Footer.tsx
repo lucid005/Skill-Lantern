@@ -125,35 +125,13 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Newsletter Section */}
-        <div className="border-t border-neutral-200 pt-8 mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
-              <h4 className="font-semibold mb-2">Stay Updated</h4>
-              <p className="text-neutral-600 text-sm">
-                Get the latest career insights and platform updates.
-              </p>
-            </div>
-            <div className="flex gap-3 w-full md:w-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 md:w-64 px-4 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:border-neutral-400 text-sm"
-              />
-              <button className="btn-primary text-sm whitespace-nowrap">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Bottom Bar */}
         <div className="border-t border-neutral-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-neutral-500">
             © {currentYear} Skill Lantern. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm text-neutral-500">
-            <span>Made with ❤️ in Nepal</span>
+            <span>Made in Nepal</span>
             <span>•</span>
             <a href="mailto:support@skilllantern.com" className="hover:text-neutral-900 transition-colors">
               support@skilllantern.com

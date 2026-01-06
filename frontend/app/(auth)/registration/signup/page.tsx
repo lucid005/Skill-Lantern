@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import {
@@ -18,6 +17,7 @@ import {
   HiOutlineScale,
   HiOutlineArrowLeft,
   HiOutlineCheck,
+  HiOutlineMagnifyingGlass,
 } from "react-icons/hi2";
 
 // Types
@@ -26,21 +26,19 @@ interface FormData {
   password: string;
   confirmPassword: string;
   fullName: string;
+  gender: string;
   dateOfBirth: string;
   cityRegion: string;
-  educationLevel: string;
+  courseCategory: string;
+  course: string;
+  specialization: string;
   schoolCollegeName: string;
-  bestSubjects: string;
-  challengingSubjects: string;
-  recentGrades: string;
+  cgpa: string;
   interests: string[];
-  technicalSkills: string;
-  softSkills: string;
-  skillLevel: string;
+  technicalSkills: string[];
+  softSkills: string[];
+  hasCertification: boolean;
   certifications: string;
-  competitions: string;
-  workshops: string;
-  onlineCourses: string;
   careerLifestyle: string;
   workEnvironment: string;
   locationPreference: string;
@@ -52,46 +50,112 @@ const initialFormData: FormData = {
   password: "",
   confirmPassword: "",
   fullName: "",
+  gender: "",
   dateOfBirth: "",
   cityRegion: "",
-  educationLevel: "",
+  courseCategory: "",
+  course: "",
+  specialization: "",
   schoolCollegeName: "",
-  bestSubjects: "",
-  challengingSubjects: "",
-  recentGrades: "",
+  cgpa: "",
   interests: [],
-  technicalSkills: "",
-  softSkills: "",
-  skillLevel: "",
+  technicalSkills: [],
+  softSkills: [],
+  hasCertification: false,
   certifications: "",
-  competitions: "",
-  workshops: "",
-  onlineCourses: "",
   careerLifestyle: "",
   workEnvironment: "",
   locationPreference: "",
   learningStyle: "",
 };
 
+// Gender options
+const genderOptions = ["Male", "Female", "Other", "Prefer not to say"];
+
+// Course categories matching the AI model
+const courseCategories = {
+  engineering: {
+    label: "Engineering",
+    courses: ["B.Tech", "B.E", "M.Tech", "M.E", "Diploma in Engineering"],
+  },
+  science: {
+    label: "Science",
+    courses: ["B.Sc", "M.Sc", "Biotechnology", "B.Sc (Hons)"],
+  },
+  commerce: {
+    label: "Commerce",
+    courses: ["B.Com", "M.Com", "B.Com (Hons)", "Chartered Accountancy (CA)"],
+  },
+  business: {
+    label: "Business & Management",
+    courses: ["BBA", "MBA", "BMS", "PGDM", "BBM"],
+  },
+  computer: {
+    label: "Computer Applications",
+    courses: ["BCA", "MCA", "B.Sc IT", "M.Sc IT"],
+  },
+  arts: {
+    label: "Arts & Humanities",
+    courses: ["BA", "MA", "BA (Hons)", "Economics", "Psychology", "Sociology"],
+  },
+  law: {
+    label: "Law",
+    courses: ["BALLB", "LLB", "LLM", "BA LLB", "BBA LLB"],
+  },
+  medical: {
+    label: "Medical & Healthcare",
+    courses: ["MBBS", "BDS", "B.Pharmacy", "B.Sc Nursing", "BAMS", "BHMS", "Pharm.D"],
+  },
+  media: {
+    label: "Media & Journalism",
+    courses: ["BMM", "BJMC", "BA Journalism", "Mass Communication"],
+  },
+  architecture: {
+    label: "Architecture & Design",
+    courses: ["B.Arch", "M.Arch", "B.Des", "M.Des"],
+  },
+  hospitality: {
+    label: "Hospitality & Tourism",
+    courses: ["BHM", "BHMCT", "Hotel Management", "Tourism Management"],
+  },
+  other: {
+    label: "Other",
+    courses: ["Other"],
+  },
+};
+
+// Interest categories matching the AI model
 const interestCategories = [
   { id: "technology", label: "Technology", icon: HiOutlineComputerDesktop },
-  { id: "health-medicine", label: "Health & Medicine", icon: HiOutlineHeart },
-  { id: "business-management", label: "Business & Management", icon: HiOutlineBuildingOffice2 },
+  { id: "healthcare", label: "Healthcare", icon: HiOutlineHeart },
+  { id: "business", label: "Business", icon: HiOutlineBuildingOffice2 },
   { id: "engineering", label: "Engineering", icon: HiOutlineCog6Tooth },
-  { id: "arts-creativity", label: "Arts & Creativity", icon: HiOutlinePaintBrush },
+  { id: "design", label: "Design & Arts", icon: HiOutlinePaintBrush },
   { id: "teaching", label: "Teaching", icon: HiOutlineAcademicCap },
-  { id: "sports", label: "Sports", icon: HiOutlineTrophy },
-  { id: "communication", label: "Communication", icon: HiOutlineChatBubbleLeftRight },
   { id: "research", label: "Research", icon: HiOutlineBeaker },
-  { id: "government-law", label: "Government & Law", icon: HiOutlineScale },
+  { id: "data_analytics", label: "Data Analytics", icon: HiOutlineComputerDesktop },
+  { id: "financial_analysis", label: "Finance", icon: HiOutlineBuildingOffice2 },
+  { id: "marketing", label: "Marketing", icon: HiOutlineChatBubbleLeftRight },
+  { id: "sales", label: "Sales", icon: HiOutlineTrophy },
+  { id: "law", label: "Law & Government", icon: HiOutlineScale },
+  { id: "entrepreneurship", label: "Entrepreneurship", icon: HiOutlineBuildingOffice2 },
+  { id: "web", label: "Web Development", icon: HiOutlineComputerDesktop },
+  { id: "gaming", label: "Gaming", icon: HiOutlineTrophy },
+  { id: "journalism", label: "Media & Journalism", icon: HiOutlineChatBubbleLeftRight },
 ];
 
-const educationLevels = ["High School", "Undergraduate", "Graduate", "Post Graduate", "Other"];
 const careerLifestyleOptions = ["High income potential", "Work-life balance", "Job security", "Creative freedom", "Making a difference"];
 const workEnvironmentOptions = ["Remote / Work from home", "Office-based", "Hybrid", "Outdoor / Field work", "No preference"];
 const locationPreferenceOptions = ["Stay in my city", "Willing to relocate nationally", "Open to international opportunities", "Prefer remote work"];
 const learningStyleOptions = ["Self-paced online learning", "Classroom / Instructor-led", "Hands-on / Practical experience", "Mentorship", "Mix of all"];
-const skillLevelOptions = ["Beginner", "Intermediate", "Advanced"];
+
+// College interface
+interface College {
+  name: string;
+  location: string;
+  university: string;
+  courseOffered: string;
+}
 
 const footerQuotes = [
   "Your account lets you save career options, track progress, and access personalized insights.",
@@ -136,20 +200,49 @@ export default function Signup() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [colleges, setColleges] = useState<College[]>([]);
+  const [collegeSearch, setCollegeSearch] = useState("");
+  const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
 
   const totalSteps = 5;
 
-  const handleInputChange = (field: keyof FormData, value: string | string[]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  // Load colleges from CSV
+  useEffect(() => {
+    const loadColleges = async () => {
+      try {
+        const response = await fetch("/Colleges in Nepal.csv");
+        const text = await response.text();
+        const lines = text.split("\n").slice(1); // Skip header
+        const parsedColleges: College[] = lines
+          .filter(line => line.trim())
+          .map(line => {
+            const [name, location, university, courseOffered] = line.split(",").map(s => s?.trim() || "");
+            return { name, location, university, courseOffered };
+          })
+          .filter(c => c.name);
+        setColleges(parsedColleges);
+      } catch (error) {
+        console.error("Failed to load colleges:", error);
+      }
+    };
+    loadColleges();
+  }, []);
 
-  const toggleInterest = (interestId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(interestId)
-        ? prev.interests.filter((i) => i !== interestId)
-        : [...prev.interests, interestId],
-    }));
+  // Filter colleges based on search
+  const filteredColleges = useMemo(() => {
+    if (!collegeSearch) return colleges.slice(0, 10);
+    const searchLower = collegeSearch.toLowerCase();
+    return colleges
+      .filter(c => 
+        c.name.toLowerCase().includes(searchLower) ||
+        c.location.toLowerCase().includes(searchLower) ||
+        c.university.toLowerCase().includes(searchLower)
+      )
+      .slice(0, 10);
+  }, [colleges, collegeSearch]);
+
+  const handleInputChange = (field: keyof FormData, value: string | string[] | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleNext = () => {
@@ -160,8 +253,8 @@ export default function Signup() {
       if (currentSubStep === 0) setCurrentSubStep(1);
       else { setCurrentStep(3); setCurrentSubStep(0); }
     } else if (currentStep === 3) {
+      // Step 3 now has only 2 substeps: intro (0) and combined interests/skills form (1)
       if (currentSubStep === 0) setCurrentSubStep(1);
-      else if (currentSubStep === 1) setCurrentSubStep(2);
       else { setCurrentStep(4); setCurrentSubStep(0); }
     } else if (currentStep === 4) {
       if (currentSubStep === 0) setCurrentSubStep(1);
@@ -180,7 +273,7 @@ export default function Signup() {
     } else {
       if (currentStep === 2) setCurrentStep(1);
       else if (currentStep === 3) { setCurrentStep(2); setCurrentSubStep(1); }
-      else if (currentStep === 4) { setCurrentStep(3); setCurrentSubStep(2); }
+      else if (currentStep === 4) { setCurrentStep(3); setCurrentSubStep(1); }
       else if (currentStep === 5) { setCurrentStep(4); setCurrentSubStep(1); }
     }
   };
@@ -301,13 +394,12 @@ export default function Signup() {
         variants={staggerItem}
         className="w-full md:w-2/5 flex items-center justify-center"
       >
-        <div className="w-150 h-150 relative">
-          <Image
+        <div className="w-64 h-64 relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={gifSrc}
             alt={title}
-            fill
-            className="object-contain"
-            unoptimized
+            className="w-full h-full object-contain"
           />
         </div>
       </motion.div>
@@ -339,6 +431,19 @@ export default function Signup() {
               />
             </div>
             <div className="w-full gap-2 flex flex-col">
+              <label className="font-medium text-sm">Gender</label>
+              <select
+                value={formData.gender}
+                onChange={(e) => handleInputChange("gender", e.target.value)}
+                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all appearance-none cursor-pointer"
+              >
+                <option value="">Select your gender</option>
+                {genderOptions.map((gender) => (
+                  <option key={gender} value={gender}>{gender}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-full gap-2 flex flex-col">
               <label className="font-medium text-sm">Date of Birth</label>
               <input
                 type="date"
@@ -365,55 +470,94 @@ export default function Signup() {
           <h2 className="text-2xl font-bold text-center">Academic Information</h2>
           <div className="space-y-4">
             <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm">Current Education Level</label>
+              <label className="font-medium text-sm">Course Category</label>
               <select
-                value={formData.educationLevel}
-                onChange={(e) => handleInputChange("educationLevel", e.target.value)}
+                value={formData.courseCategory}
+                onChange={(e) => {
+                  handleInputChange("courseCategory", e.target.value);
+                  handleInputChange("course", ""); // Reset course when category changes
+                }}
                 className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all appearance-none cursor-pointer"
               >
-                <option value="">Select your education level</option>
-                {educationLevels.map((level) => (
-                  <option key={level} value={level}>{level}</option>
+                <option value="">Select course category</option>
+                {Object.entries(courseCategories).map(([key, category]) => (
+                  <option key={key} value={key}>{category.label}</option>
                 ))}
               </select>
             </div>
+            {formData.courseCategory && (
+              <div className="w-full gap-2 flex flex-col">
+                <label className="font-medium text-sm">Course / Degree</label>
+                <select
+                  value={formData.course}
+                  onChange={(e) => handleInputChange("course", e.target.value)}
+                  className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select your course</option>
+                  {courseCategories[formData.courseCategory as keyof typeof courseCategories]?.courses.map((course) => (
+                    <option key={course} value={course}>{course}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="w-full gap-2 flex flex-col">
+              <label className="font-medium text-sm">Specialization (Optional)</label>
+              <input
+                type="text"
+                placeholder="e.g., Computer Science, Finance, Marketing"
+                value={formData.specialization}
+                onChange={(e) => handleInputChange("specialization", e.target.value)}
+                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
+              />
+            </div>
+            <div className="w-full gap-2 flex flex-col relative">
               <label className="font-medium text-sm">School / College Name</label>
-              <input
-                type="text"
-                placeholder="Enter your school / college name"
-                value={formData.schoolCollegeName}
-                onChange={(e) => handleInputChange("schoolCollegeName", e.target.value)}
-                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
-              />
+              <div className="relative">
+                <div className="flex items-center border-b-2 border-neutral-300 focus-within:border-neutral-900 transition-all">
+                  <HiOutlineMagnifyingGlass className="text-neutral-400 ml-2" size={18} />
+                  <input
+                    type="text"
+                    placeholder="Search or type your college name"
+                    value={collegeSearch || formData.schoolCollegeName}
+                    onChange={(e) => {
+                      setCollegeSearch(e.target.value);
+                      handleInputChange("schoolCollegeName", e.target.value);
+                      setShowCollegeDropdown(true);
+                    }}
+                    onFocus={() => setShowCollegeDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowCollegeDropdown(false), 200)}
+                    className="w-full px-4 py-3 bg-transparent focus:outline-none"
+                  />
+                </div>
+                {showCollegeDropdown && filteredColleges.length > 0 && (
+                  <div className="absolute z-50 w-full bg-white border border-neutral-200 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
+                    {filteredColleges.map((college, idx) => (
+                      <button
+                        key={`${college.name}-${idx}`}
+                        type="button"
+                        className="w-full px-4 py-3 text-left hover:bg-neutral-100 transition-colors border-b border-neutral-100 last:border-0"
+                        onClick={() => {
+                          handleInputChange("schoolCollegeName", college.name);
+                          setCollegeSearch(college.name);
+                          setShowCollegeDropdown(false);
+                        }}
+                      >
+                        <div className="font-medium text-sm">{college.name}</div>
+                        <div className="text-xs text-neutral-500">{college.location} • {college.university}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm">Best Subjects</label>
+              <label className="font-medium text-sm">CGPA / Percentage</label>
+              <p className="text-xs text-gray-500">Enter CGPA (0-10) or Percentage (0-100)</p>
               <input
                 type="text"
-                placeholder="Enter your best subjects"
-                value={formData.bestSubjects}
-                onChange={(e) => handleInputChange("bestSubjects", e.target.value)}
-                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
-              />
-            </div>
-            <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm">Subjects You Find Challenging</label>
-              <input
-                type="text"
-                placeholder="Enter the subjects you find challenging"
-                value={formData.challengingSubjects}
-                onChange={(e) => handleInputChange("challengingSubjects", e.target.value)}
-                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
-              />
-            </div>
-            <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm">Recent Grades / GPA</label>
-              <input
-                type="text"
-                placeholder="Enter your recent grades / GPA"
-                value={formData.recentGrades}
-                onChange={(e) => handleInputChange("recentGrades", e.target.value)}
+                placeholder="e.g., 8.5 or 85%"
+                value={formData.cgpa}
+                onChange={(e) => handleInputChange("cgpa", e.target.value)}
                 className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
               />
             </div>
@@ -423,174 +567,113 @@ export default function Signup() {
     </motion.div>
   );
 
-  // Step 3 - Interests Selection
-  const renderStep3Interests = () => (
+  // Step 3 - Combined Interests & Skills (Single Page)
+  const renderStep3Combined = () => (
     <motion.div
-      key="step3-interests"
-      variants={staggerContainer}
-      initial="initial"
-      animate="animate"
-      className="w-full flex-1 flex flex-col px-8 md:px-16 lg:px-32 xl:px-64 py-8 overflow-y-auto"
-    >
-      <div className="max-w-2xl mx-auto w-full space-y-8">
-        <motion.div variants={staggerItem} className="space-y-2">
-          <h2 className="text-2xl font-bold">Interests</h2>
-          <p className="text-gray-600">Choose from categories such as:</p>
-        </motion.div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {interestCategories.map((category, index) => {
-            const Icon = category.icon;
-            const isSelected = formData.interests.includes(category.id);
-            return (
-              <motion.button
-                key={category.id}
-                variants={staggerItem}
-                custom={index}
-                type="button"
-                onClick={() => toggleInterest(category.id)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
-                  isSelected
-                    ? "border-neutral-900 bg-neutral-900 text-white"
-                    : "border-neutral-200 bg-white hover:border-neutral-400"
-                }`}
-              >
-                <Icon size={24} />
-                <span className="font-medium">{category.label}</span>
-                {isSelected && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="ml-auto"
-                  >
-                    <HiOutlineCheck size={20} />
-                  </motion.div>
-                )}
-              </motion.button>
-            );
-          })}
-        </div>
-      </div>
-    </motion.div>
-  );
-
-  // Step 3 - Skills & Achievements
-  const renderStep3Skills = () => (
-    <motion.div
-      key="step3-skills"
+      key="step3-combined"
       variants={staggerContainer}
       initial="initial"
       animate="animate"
       className="w-full flex-1 flex flex-col px-8 md:px-16 lg:px-32 xl:px-64 py-8 overflow-y-auto"
     >
       <div className="max-w-2xl mx-auto w-full space-y-10">
-        {/* Skills */}
+        {/* Interests Section - Dropdown */}
+        <motion.div variants={staggerItem} className="space-y-4">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">Interests</h2>
+            <p className="text-gray-600 text-sm">Select your primary area of interest:</p>
+          </div>
+          <select
+            value={formData.interests[0] || ""}
+            onChange={(e) => handleInputChange("interests", e.target.value ? [e.target.value] : [])}
+            className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all appearance-none cursor-pointer"
+          >
+            <option value="">Select your interest</option>
+            {interestCategories.map((category) => (
+              <option key={category.id} value={category.id}>{category.label}</option>
+            ))}
+          </select>
+        </motion.div>
+
+        {/* Skills Section - Input Fields */}
         <motion.div variants={staggerItem} className="space-y-6">
-          <h2 className="text-2xl font-bold">Skills</h2>
-          <div className="space-y-4">
-            <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm">Technical Skills</label>
-              <p className="text-xs text-gray-500">Programming, design, analysis, etc.</p>
-              <input
-                type="text"
-                placeholder="e.g., Python, Photoshop, Data Analysis"
-                value={formData.technicalSkills}
-                onChange={(e) => handleInputChange("technicalSkills", e.target.value)}
-                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
-              />
-            </div>
-            <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm">Soft Skills</label>
-              <p className="text-xs text-gray-500">Communication, leadership, creativity, teamwork</p>
-              <input
-                type="text"
-                placeholder="e.g., Leadership, Public Speaking, Problem Solving"
-                value={formData.softSkills}
-                onChange={(e) => handleInputChange("softSkills", e.target.value)}
-                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
-              />
-            </div>
-            <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm">Skill Level</label>
-              <div className="flex gap-4 mt-2">
-                {skillLevelOptions.map((level) => (
-                  <motion.button
-                    key={level}
-                    type="button"
-                    onClick={() => handleInputChange("skillLevel", level)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`px-4 py-2 rounded-full border-2 transition-all ${
-                      formData.skillLevel === level
-                        ? "border-neutral-900 bg-neutral-900 text-white"
-                        : "border-neutral-300 hover:border-neutral-500"
-                    }`}
-                  >
-                    {level}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">Skills</h2>
+            <p className="text-gray-600 text-sm">Enter your skills (comma separated):</p>
+          </div>
+          
+          {/* Technical Skills - Input */}
+          <div className="w-full gap-2 flex flex-col">
+            <label className="font-medium text-sm">Technical Skills</label>
+            <input
+              type="text"
+              placeholder="e.g., Python, JavaScript, Excel, AutoCAD"
+              value={formData.technicalSkills.join(", ")}
+              onChange={(e) => handleInputChange("technicalSkills", e.target.value.split(",").map(s => s.trim()).filter(s => s))}
+              className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
+            />
+          </div>
+
+          {/* Soft Skills - Input */}
+          <div className="w-full gap-2 flex flex-col">
+            <label className="font-medium text-sm">Soft Skills</label>
+            <input
+              type="text"
+              placeholder="e.g., Communication, Leadership, Teamwork"
+              value={formData.softSkills.join(", ")}
+              onChange={(e) => handleInputChange("softSkills", e.target.value.split(",").map(s => s.trim()).filter(s => s))}
+              className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
+            />
           </div>
         </motion.div>
 
-        {/* Achievements */}
-        <motion.div variants={staggerItem} className="space-y-6">
-          <h2 className="text-2xl font-bold">Achievements (Optional)</h2>
+        {/* Certifications */}
+        <motion.div variants={staggerItem} className="space-y-4">
+          <h2 className="text-2xl font-bold">Certifications</h2>
           <div className="space-y-4">
             <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm flex items-center gap-2">
-                <span className="w-2 h-2 bg-neutral-900 rounded-full"></span>
-                Certifications
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., AWS Certified, Google Analytics"
-                value={formData.certifications}
-                onChange={(e) => handleInputChange("certifications", e.target.value)}
-                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
-              />
+              <label className="font-medium text-sm">Do you have any certifications?</label>
+              <div className="flex gap-4 mt-2">
+                <motion.button
+                  type="button"
+                  onClick={() => handleInputChange("hasCertification", true)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`px-6 py-2 rounded-full border-2 transition-all ${
+                    formData.hasCertification
+                      ? "border-neutral-900 bg-neutral-900 text-white"
+                      : "border-neutral-300 hover:border-neutral-500"
+                  }`}
+                >
+                  Yes
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => handleInputChange("hasCertification", false)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`px-6 py-2 rounded-full border-2 transition-all ${
+                    !formData.hasCertification
+                      ? "border-neutral-900 bg-neutral-900 text-white"
+                      : "border-neutral-300 hover:border-neutral-500"
+                  }`}
+                >
+                  No
+                </motion.button>
+              </div>
             </div>
-            <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm flex items-center gap-2">
-                <span className="w-2 h-2 bg-neutral-900 rounded-full"></span>
-                Competitions
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., Hackathons, Science Olympiad"
-                value={formData.competitions}
-                onChange={(e) => handleInputChange("competitions", e.target.value)}
-                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
-              />
-            </div>
-            <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm flex items-center gap-2">
-                <span className="w-2 h-2 bg-neutral-900 rounded-full"></span>
-                Workshops
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., Leadership workshops, Tech bootcamps"
-                value={formData.workshops}
-                onChange={(e) => handleInputChange("workshops", e.target.value)}
-                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
-              />
-            </div>
-            <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm flex items-center gap-2">
-                <span className="w-2 h-2 bg-neutral-900 rounded-full"></span>
-                Completed Online Courses
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., Coursera, Udemy courses"
-                value={formData.onlineCourses}
-                onChange={(e) => handleInputChange("onlineCourses", e.target.value)}
-                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
-              />
-            </div>
+            {formData.hasCertification && (
+              <div className="w-full gap-2 flex flex-col">
+                <label className="font-medium text-sm">List your certifications</label>
+                <input
+                  type="text"
+                  placeholder="e.g., AWS Certified, Google Analytics, Python Professional"
+                  value={formData.certifications}
+                  onChange={(e) => handleInputChange("certifications", e.target.value)}
+                  className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
+                />
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
@@ -704,6 +787,7 @@ export default function Signup() {
               Personal Details
             </h3>
             <ReviewItem label="Full Name" value={formData.fullName} />
+            <ReviewItem label="Gender" value={formData.gender} />
             <ReviewItem label="Date of Birth" value={formData.dateOfBirth} />
             <ReviewItem label="City / Region" value={formData.cityRegion} />
           </motion.div>
@@ -714,11 +798,11 @@ export default function Signup() {
               <span className="w-8 h-8 bg-neutral-900 text-white rounded-lg flex items-center justify-center text-sm">2</span>
               Academic Information
             </h3>
-            <ReviewItem label="Education Level" value={formData.educationLevel} />
+            <ReviewItem label="Course Category" value={courseCategories[formData.courseCategory as keyof typeof courseCategories]?.label || formData.courseCategory} />
+            <ReviewItem label="Course / Degree" value={formData.course} />
+            <ReviewItem label="Specialization" value={formData.specialization} />
             <ReviewItem label="School / College" value={formData.schoolCollegeName} />
-            <ReviewItem label="Best Subjects" value={formData.bestSubjects} />
-            <ReviewItem label="Challenging Subjects" value={formData.challengingSubjects} />
-            <ReviewItem label="Recent Grades / GPA" value={formData.recentGrades} />
+            <ReviewItem label="CGPA / Percentage" value={formData.cgpa} />
           </motion.div>
 
           {/* Interests */}
@@ -755,21 +839,42 @@ export default function Signup() {
               <span className="w-8 h-8 bg-neutral-900 text-white rounded-lg flex items-center justify-center text-sm">3</span>
               Skills
             </h3>
-            <ReviewItem label="Technical Skills" value={formData.technicalSkills} />
-            <ReviewItem label="Soft Skills" value={formData.softSkills} />
-            <ReviewItem label="Skill Level" value={formData.skillLevel} />
+            <div className="space-y-3">
+              <div>
+                <span className="text-sm text-neutral-500">Technical Skills:</span>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {formData.technicalSkills.length > 0 ? (
+                    formData.technicalSkills.map((skill) => (
+                      <span key={skill} className="px-2 py-1 bg-neutral-100 rounded text-sm">{skill}</span>
+                    ))
+                  ) : (
+                    <span className="text-neutral-400 italic">None selected</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <span className="text-sm text-neutral-500">Soft Skills:</span>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {formData.softSkills.length > 0 ? (
+                    formData.softSkills.map((skill) => (
+                      <span key={skill} className="px-2 py-1 bg-neutral-100 rounded text-sm">{skill}</span>
+                    ))
+                  ) : (
+                    <span className="text-neutral-400 italic">None selected</span>
+                  )}
+                </div>
+              </div>
+            </div>
           </motion.div>
 
-          {/* Achievements */}
+          {/* Certifications */}
           <motion.div variants={staggerItem} className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-200">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
               <span className="w-8 h-8 bg-neutral-900 text-white rounded-lg flex items-center justify-center text-sm">3</span>
-              Achievements
+              Certifications
             </h3>
-            <ReviewItem label="Certifications" value={formData.certifications} />
-            <ReviewItem label="Competitions" value={formData.competitions} />
-            <ReviewItem label="Workshops" value={formData.workshops} />
-            <ReviewItem label="Online Courses" value={formData.onlineCourses} />
+            <ReviewItem label="Has Certifications" value={formData.hasCertification ? "Yes" : "No"} />
+            {formData.hasCertification && <ReviewItem label="Certifications" value={formData.certifications} />}
           </motion.div>
 
           {/* Future Goals & Preferences */}
@@ -811,10 +916,10 @@ export default function Signup() {
         : renderStep2Form();
     }
     if (currentStep === 3) {
-      if (currentSubStep === 0)
-        return renderStepIntro(3, "Share Your Interests & Skills", "Help us learn what you enjoy and what you're good at. This helps our AI connect you with careers that match your strengths.", "/step3.gif");
-      if (currentSubStep === 1) return renderStep3Interests();
-      return renderStep3Skills();
+      // Step 3 now has only intro (0) and combined interests/skills form (1)
+      return currentSubStep === 0
+        ? renderStepIntro(3, "Share Your Interests & Skills", "Help us learn what you enjoy and what you're good at. This helps our AI connect you with careers that match your strengths.", "/step3.gif")
+        : renderStep3Combined();
     }
     if (currentStep === 4) {
       return currentSubStep === 0
@@ -845,7 +950,7 @@ export default function Signup() {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               onClick={handleBack}
-              className="flex items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors"
+              className="flex items-center gap-2 text-neutral-700 hover:text-neutral-900 transition-colors cursor-pointer"
             >
               <HiOutlineArrowLeft size={18} />
               <span>Back</span>
@@ -897,7 +1002,7 @@ export default function Signup() {
             onClick={handleNext}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="btn-primary flex items-center gap-2 ml-auto"
+            className="btn-primary flex items-center gap-2 ml-auto cursor-pointer"
           >
             {getButtonText()}
             {currentStep === 5 && currentSubStep === 1 && <HiOutlineCheck size={18} />}

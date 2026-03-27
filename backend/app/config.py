@@ -11,10 +11,10 @@ import os
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
-    # Ollama Configuration
-    ollama_host: str = "http://localhost:11434"
-    ollama_model: str = "llama3"
-    ollama_timeout: int = 120  # seconds
+    # Gemini API Configuration
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
+    gemini_timeout: int = 60  # seconds
     
     # Server Configuration
     host: str = "0.0.0.0"

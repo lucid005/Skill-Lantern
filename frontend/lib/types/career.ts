@@ -111,7 +111,7 @@ export interface FullRecommendationResponse {
 // Health
 export interface HealthResponse {
   status: string;
-  ollama_status: string;
+  gemini_status: string;
   model_loaded: boolean;
   version: string;
 }

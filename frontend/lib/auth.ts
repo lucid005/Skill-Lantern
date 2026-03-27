@@ -11,6 +11,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
       name: 'credentials',
@@ -56,14 +57,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     error: '/registration/login',
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // Allow OAuth sign in
+      if (account?.provider === 'google') {
+        return true;
+      }
+      // Allow credentials sign in
+      if (account?.provider === 'credentials') {
+        return true;
+      }
+      return false;
+    },
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // On initial sign in, persist user id
       if (user) {
+        token.sub = user.id;
+      }
+      // For OAuth, ensure we have the user id from the database
+      if (account?.provider === 'google' && user) {
         token.sub = user.id;
       }
       return token;

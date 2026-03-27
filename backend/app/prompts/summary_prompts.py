@@ -18,35 +18,17 @@ def get_summary_user_prompt(
     
     name_str = user_name if user_name else "the student"
     
-    return f"""Career Chosen: {career_name}
+    return f"""Career: {career_name} | Student: {name_str}
+Roadmap: {roadmap_summary}
+Colleges: {college_summary}
 
-Roadmap Summary:
-{roadmap_summary}
+Write a short encouraging career summary: why this career fits, 3 key skills, education pathway in Nepal, and 3 immediate action steps.
 
-College Recommendations:
-{college_summary}
-
-Task:
-Create a final user-facing career recommendation summary that includes:
-1. Why this career suits {name_str}
-2. Key skills to focus on
-3. Education pathway in Nepal
-4. Next 3 immediate actions
-
-Tone:
-- Encouraging
-- Clear
-- Practical
-
-Output Format (respond in valid JSON):
-{{
-    "career_fit_explanation": "Explanation of why this career is a good fit",
-    "key_skills": ["skill1", "skill2", "skill3"],
-    "education_pathway": "Summary of educational steps in Nepal",
-    "immediate_actions": [
-        "Action 1: Description",
-        "Action 2: Description",
-        "Action 3: Description"
-    ],
-    "motivation_message": "An encouraging closing message"
-}}"""
+Respond in JSON:
+{{{{
+  "career_fit_explanation": "",
+  "key_skills": [],
+  "education_pathway": "",
+  "immediate_actions": [],
+  "motivation_message": ""
+}}}}"""

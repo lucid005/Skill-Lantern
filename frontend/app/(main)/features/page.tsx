@@ -164,7 +164,7 @@ export default function Features() {
                       <div className="w-16 h-16 bg-neutral-200 rounded-full flex items-center justify-center mx-auto mb-4">
                         {feature.icon}
                       </div>
-                      <p className="text-sm">Feature Preview</p>
+                      
                     </div>
                   </div>
               </MotionSection>

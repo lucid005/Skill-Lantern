@@ -13,7 +13,7 @@ import logging
 from app.config import settings
 from app.models.schemas import HealthResponse
 from app.routers import career, roadmap, colleges, recommendations
-from app.services.ollama_service import ollama_service
+from app.services.gemini_service import gemini_service
 from app.services.college_service import college_service
 from app.models.career_predictor import career_predictor
 
@@ -55,14 +55,12 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("ℹ️ Using rule-based prediction (XGBoost model not found)")
     
-    # Check Ollama connection
-    logger.info("🔗 Checking Ollama connection...")
-    if await ollama_service.check_health():
-        logger.info(f"✅ Ollama is running (model: {settings.ollama_model})")
-        models = await ollama_service.list_models()
-        logger.info(f"📋 Available models: {models}")
+    # Check Gemini API connection
+    logger.info("🔗 Checking Gemini API connection...")
+    if await gemini_service.check_health():
+        logger.info(f"✅ Gemini API is connected (model: {settings.gemini_model})")
     else:
-        logger.warning("⚠️ Ollama is not accessible - LLM features will be limited")
+        logger.warning("⚠️ Gemini API is not accessible - LLM features will be limited")
     
     logger.info("✨ Skill Lantern Backend is ready!")
     
@@ -89,7 +87,7 @@ app = FastAPI(
     
     * FastAPI + Python
     * XGBoost for career prediction
-    * Ollama/LLaMA for LLM inference
+    * Google Gemini for LLM inference
     * Nepal college dataset
     """,
     version="1.0.0",
@@ -135,14 +133,14 @@ async def health_check():
     
     Returns status of:
     - API server
-    - Ollama/LLM connection
+    - Gemini API connection
     - XGBoost model
     """
-    ollama_healthy = await ollama_service.check_health()
+    gemini_healthy = await gemini_service.check_health()
     
     return HealthResponse(
         status="healthy",
-        ollama_status="connected" if ollama_healthy else "disconnected",
+        gemini_status="connected" if gemini_healthy else "disconnected",
         model_loaded=career_predictor.model_loaded,
         version="1.0.0"
     )
@@ -152,8 +150,7 @@ async def health_check():
 async def get_config():
     """Get non-sensitive configuration info."""
     return {
-        "ollama_model": settings.ollama_model,
-        "ollama_host": settings.ollama_host,
+        "gemini_model": settings.gemini_model,
         "debug": settings.debug
     }
 

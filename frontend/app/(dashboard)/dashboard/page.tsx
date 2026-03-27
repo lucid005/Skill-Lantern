@@ -55,6 +55,7 @@ function DashboardContent() {
   const [loadingFullDetails, setLoadingFullDetails] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFullDetails, setShowFullDetails] = useState(false);
+  const [generatingRecs, setGeneratingRecs] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -124,6 +125,28 @@ function DashboardContent() {
     }
   };
 
+  const handleRetryRecommendations = async () => {
+    setGeneratingRecs(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/users/recommendations", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate recommendations");
+      }
+
+      const data = await response.json();
+      setRecommendation(data);
+    } catch {
+      setError("Failed to generate recommendations. Make sure the AI backend is running.");
+    } finally {
+      setGeneratingRecs(false);
+    }
+  };
+
   const handleSignOut = () => {
     signOut({ callbackUrl: "/" });
   };
@@ -136,21 +159,46 @@ function DashboardContent() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-neutral-50 to-neutral-100 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center space-y-4"
+          className="text-center space-y-6"
         >
-          <div className="w-16 h-16 border-4 border-neutral-900 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-neutral-600">Loading your dashboard...</p>
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-neutral-200 border-t-neutral-900 rounded-full animate-spin mx-auto"></div>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: [0, 1.2, 1] }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xs">SL</span>
+              </div>
+            </motion.div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-neutral-900 font-semibold text-lg">Loading your dashboard</p>
+            <p className="text-neutral-500 text-sm">Preparing your personalized insights...</p>
+          </div>
+          <div className="flex items-center gap-1.5 justify-center">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 bg-neutral-400 rounded-full"
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+              />
+            ))}
+          </div>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
+    <div className="min-h-screen bg-linear-to-br from-neutral-50 to-neutral-100">
       {/* Header */}
       <header className="bg-white border-b border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -206,22 +254,67 @@ function DashboardContent() {
 
         {!recommendation ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-white rounded-2xl p-8 text-center shadow-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl p-12 text-center shadow-sm border border-neutral-100"
           >
-            <HiOutlineSparkles className="w-16 h-16 text-neutral-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">No Recommendations Yet</h2>
-            <p className="text-neutral-600 mb-6">
-              Complete your profile to get personalized career recommendations.
-            </p>
-            <Link
-              href="/registration/signup"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors"
-            >
-              Complete Profile
-              <HiOutlineArrowRight size={18} />
-            </Link>
+            {generatingRecs ? (
+              <div className="space-y-6">
+                <div className="relative">
+                  <div className="w-16 h-16 border-4 border-neutral-200 border-t-neutral-900 rounded-full animate-spin mx-auto"></div>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [0, 1.2, 1] }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <HiOutlineSparkles className="w-6 h-6 text-neutral-700" />
+                  </motion.div>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">Generating Your Recommendations</h2>
+                  <p className="text-neutral-500 text-sm">Our AI is analyzing your profile. This may take a moment...</p>
+                </div>
+                <div className="flex items-center gap-1.5 justify-center">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="w-2 h-2 bg-neutral-400 rounded-full"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="w-20 h-20 bg-neutral-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-neutral-100">
+                  <HiOutlineSparkles className="w-10 h-10 text-neutral-400" />
+                </div>
+                <h2 className="text-2xl font-bold mb-3">No Recommendations Yet</h2>
+                <p className="text-neutral-500 mb-8 max-w-md mx-auto">
+                  {error
+                    ? "We couldn't generate your recommendations. The AI backend may be offline."
+                    : "Complete your profile to get personalized career recommendations."}
+                </p>
+                <div className="flex items-center gap-3 justify-center">
+                  <button
+                    onClick={handleRetryRecommendations}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-900 text-white rounded-xl hover:bg-neutral-800 transition-colors font-medium"
+                  >
+                    <HiOutlineSparkles size={18} />
+                    Generate Recommendations
+                  </button>
+                  <Link
+                    href="/registration/signup"
+                    className="inline-flex items-center gap-2 px-6 py-3 border-2 border-neutral-200 text-neutral-700 rounded-xl hover:border-neutral-300 transition-colors font-medium"
+                  >
+                    Update Profile
+                    <HiOutlineArrowRight size={18} />
+                  </Link>
+                </div>
+              </>
+            )}
           </motion.div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">
@@ -232,10 +325,17 @@ function DashboardContent() {
               transition={{ delay: 0.1 }}
               className="lg:col-span-2"
             >
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-6">
-                  <HiOutlineChartBar className="w-6 h-6 text-neutral-900" />
-                  <h2 className="text-xl font-semibold">Career Predictions</h2>
+               <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-100">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-neutral-900 rounded-xl flex items-center justify-center">
+                      <HiOutlineChartBar className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">Career Predictions</h2>
+                      <p className="text-neutral-500 text-xs">Based on your profile analysis</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -245,10 +345,10 @@ function DashboardContent() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1 * index }}
-                      className={`p-4 rounded-xl border-2 transition-all ${
+                      className={`p-5 rounded-xl border-2 transition-all ${
                         index === 0
-                          ? "border-neutral-900 bg-neutral-50"
-                          : "border-neutral-200 hover:border-neutral-300"
+                          ? "border-neutral-900 bg-gradient-to-br from-neutral-50 to-neutral-100 shadow-sm"
+                          : "border-neutral-100 hover:border-neutral-200 bg-white"
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -322,10 +422,12 @@ function DashboardContent() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-6">
-                  <HiOutlineUser className="w-6 h-6 text-neutral-900" />
-                  <h2 className="text-xl font-semibold">Your Profile</h2>
+               <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-neutral-900 rounded-xl flex items-center justify-center">
+                    <HiOutlineUser className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold">Your Profile</h2>
                 </div>
 
                 {profile && (
@@ -376,21 +478,21 @@ function DashboardContent() {
                 )}
               </div>
 
-              {/* Quick Stats */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm mt-6">
-                <h3 className="font-semibold mb-4">Quick Stats</h3>
+               {/* Quick Stats */}
+              <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-2xl p-6 shadow-sm mt-6 text-white">
+                <h3 className="font-bold mb-4 text-neutral-200">Quick Stats</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-neutral-50 rounded-xl">
-                    <p className="text-2xl font-bold text-neutral-900">
+                  <div className="text-center p-4 bg-white/10 rounded-xl backdrop-blur-sm">
+                    <p className="text-3xl font-bold">
                       {recommendation.predictions.length}
                     </p>
-                    <p className="text-xs text-neutral-500">Careers Matched</p>
+                    <p className="text-xs text-neutral-300 mt-1">Careers Matched</p>
                   </div>
-                  <div className="text-center p-3 bg-neutral-50 rounded-xl">
-                    <p className="text-2xl font-bold text-neutral-900">
+                  <div className="text-center p-4 bg-white/10 rounded-xl backdrop-blur-sm">
+                    <p className="text-3xl font-bold">
                       {((recommendation.predictions[0]?.confidence || 0) * 100).toFixed(0)}%
                     </p>
-                    <p className="text-xs text-neutral-500">Top Match Score</p>
+                    <p className="text-xs text-neutral-300 mt-1">Top Match Score</p>
                   </div>
                 </div>
               </div>
@@ -629,7 +731,7 @@ function FullDetailsModal({
 export default function DashboardPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-neutral-50 to-neutral-100 flex items-center justify-center">
         <div className="w-16 h-16 border-4 border-neutral-900 border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>

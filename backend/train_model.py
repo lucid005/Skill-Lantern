@@ -76,56 +76,81 @@ def categorize_career(job_title: str) -> str:
     """Map job titles to standardized career categories."""
     job_lower = str(job_title).lower().strip()
     
-    # Career category mappings
+    # Skip students/unemployed/NA - these are not useful career categories
+    if not job_lower or job_lower in ["na", "n/a", "unknown", "student/unemployed", "student (unemployed)"]:
+        return None  # Will be filtered out
+    if job_lower.startswith("student") or job_lower == "unemployed":
+        return None
+    
+    # Career category mappings - ordered from most specific to least specific
     categories = {
         "Software Engineer": ["software engineer", "software developer", "programmer", 
-                             "developer", "coding", "software", "full stack", "backend", 
-                             "frontend", "web developer", "application developer"],
+                             "software", "full stack", "backend developer", 
+                             "frontend developer", "web developer", "application developer",
+                             "computer software"],
         "Data Scientist": ["data scientist", "machine learning", "ml engineer", 
-                          "ai engineer", "deep learning", "artificial intelligence"],
+                          "ai engineer", "deep learning", "artificial intelligence",
+                          "data science"],
         "Data Analyst": ["data analyst", "business analyst", "analytics", 
-                        "data analysis", "bi analyst", "reporting analyst"],
+                        "data analysis", "bi analyst", "reporting analyst",
+                        "data engineer"],
+        "Web Developer": ["web developer", "frontend", "react developer",
+                         "angular developer", "web designer", "web application"],
+        "Mobile App Developer": ["mobile", "android", "ios developer", "flutter",
+                                "react native", "app developer"],
         "DevOps Engineer": ["devops", "site reliability", "sre", "infrastructure",
                            "cloud engineer", "platform engineer"],
         "Network Engineer": ["network engineer", "network administrator", 
-                            "system administrator", "it administrator", "network"],
-        "Database Administrator": ["database", "dba", "sql developer", "data engineer"],
+                            "system administrator", "it administrator",
+                            "network analyst"],
+        "Database Administrator": ["database", "dba", "sql developer"],
         "Cybersecurity Analyst": ["security", "cybersecurity", "infosec", 
-                                  "penetration tester", "security analyst"],
-        "Product Manager": ["product manager", "product owner", "pm", "product"],
-        "Project Manager": ["project manager", "program manager", "scrum master"],
-        "UI/UX Designer": ["ui", "ux", "designer", "user experience", "user interface",
-                          "graphic designer", "visual designer"],
-        "Quality Assurance": ["qa", "quality assurance", "tester", "testing", "sdet"],
+                                  "penetration tester", "security analyst",
+                                  "ethical hacking"],
+        "Product Manager": ["product manager", "product owner", "product lead"],
+        "Project Manager": ["project manager", "program manager", "scrum master",
+                           "project lead"],
+        "UI/UX Designer": ["ui", "ux", "user experience", "user interface",
+                          "graphic designer", "visual designer", "designer"],
+        "Quality Assurance Engineer": ["qa", "quality assurance", "tester", "testing", "sdet"],
         "Teacher/Educator": ["teacher", "professor", "lecturer", "educator", 
-                            "teaching", "academic", "faculty"],
-        "Finance/Accounting": ["accountant", "finance", "financial", "auditor", 
-                              "banking", "investment", "chartered accountant"],
-        "Sales/Marketing": ["sales", "marketing", "business development", 
-                           "account manager", "digital marketing", "brand"],
-        "HR/Recruiter": ["hr", "human resource", "recruiter", "talent acquisition",
+                            "teaching", "academic", "faculty", "assistant professor"],
+        "Financial Analyst": ["accountant", "finance", "financial", "auditor", 
+                              "banking", "investment", "chartered accountant",
+                              "tele-caller"],
+        "Marketing Specialist": ["sales", "marketing", "business development", 
+                           "account manager", "digital marketing", "brand",
+                           "relationships manager"],
+        "HR Manager": ["hr", "human resource", "recruiter", "talent acquisition",
                         "people operations"],
-        "Consultant": ["consultant", "consulting", "advisory", "advisor"],
-        "Research": ["researcher", "research", "scientist", "r&d"],
-        "Healthcare": ["doctor", "nurse", "medical", "healthcare", "pharmacist",
+        "IT Consultant": ["consultant", "consulting", "advisory", "advisor"],
+        "Research Scientist": ["researcher", "research", "scientist", "r&d"],
+        "Healthcare Professional": ["doctor", "nurse", "medical", "healthcare", "pharmacist",
                       "physician", "hospital"],
-        "Engineering": ["engineer", "mechanical", "civil", "electrical", 
-                       "electronics", "chemical", "design engineer"],
-        "Management": ["manager", "director", "head", "lead", "chief", "vp", 
+        "Mechanical Engineer": ["mechanical", "design engineer", "automobile",
+                               "plant", "mine engineer"],
+        "Civil Engineer": ["civil", "structural", "construction"],
+        "Electrical Engineer": ["electrical", "electronics", "embedded",
+                               "instrumentation"],
+        "Business Manager": ["manager", "director", "head", "lead", "chief", "vp", 
                       "executive", "ceo", "cto"],
     }
     
-    # Check each category
+    # Check each category - more specific matches first
     for category, keywords in categories.items():
         for keyword in keywords:
             if keyword in job_lower:
                 return category
     
-    # Default category
-    if "student" in job_lower or "unemployed" in job_lower or job_lower == "na":
-        return "Student/Entry-Level"
+    # If no match found, try to infer from broader context
+    if "engineer" in job_lower:
+        return "Software Engineer"
+    if "developer" in job_lower or "coding" in job_lower:
+        return "Software Engineer"
+    if "analyst" in job_lower:
+        return "Data Analyst"
     
-    return "Other"
+    return None  # Will be filtered out - no guessing
 
 
 def encode_skills(df: pd.DataFrame) -> pd.DataFrame:
@@ -217,6 +242,22 @@ def prepare_features(df: pd.DataFrame) -> tuple:
     df['job_title'] = extract_job_title(df)
     df['career_category'] = df['job_title'].apply(categorize_career)
     
+    # Remove rows where career_category is None (students, unemployed, unknown)
+    before_count = len(df)
+    df = df[df['career_category'].notna()].reset_index(drop=True)
+    removed_count = before_count - len(df)
+    print(f"\n🗑️ Removed {removed_count} rows with no clear career (students/unemployed/unknown)")
+    print(f"📊 Remaining records: {len(df)}")
+    
+    # Remove career categories with fewer than 3 samples (can't train reliably)
+    MIN_SAMPLES = 3
+    career_counts = df['career_category'].value_counts()
+    rare_careers = career_counts[career_counts < MIN_SAMPLES].index.tolist()
+    if rare_careers:
+        print(f"\n⚠️ Removing {len(rare_careers)} rare categories (< {MIN_SAMPLES} samples): {rare_careers}")
+        df = df[~df['career_category'].isin(rare_careers)].reset_index(drop=True)
+        print(f"📊 Remaining records after filtering rare categories: {len(df)}")
+    
     # Print career distribution
     print("\n📈 Career Category Distribution:")
     career_dist = df['career_category'].value_counts()
@@ -296,16 +337,22 @@ def train_model(X: np.ndarray, y: np.ndarray, feature_cols: list):
     print(f"   - Training samples: {len(X_train)}")
     print(f"   - Testing samples: {len(X_test)}")
     
-    # Create XGBoost classifier
+    # Create XGBoost classifier with improved hyperparameters
+    n_classes = len(np.unique(y_train))
     model = xgb.XGBClassifier(
-        n_estimators=200,
-        max_depth=6,
-        learning_rate=0.1,
-        subsample=0.8,
-        colsample_bytree=0.8,
+        n_estimators=500,
+        max_depth=8,
+        learning_rate=0.05,
+        subsample=0.85,
+        colsample_bytree=0.85,
+        min_child_weight=3,
+        gamma=0.1,
+        reg_alpha=0.1,
+        reg_lambda=1.0,
         random_state=42,
         n_jobs=-1,
         objective='multi:softprob',
+        num_class=n_classes,
         eval_metric='mlogloss',
         use_label_encoder=False
     )

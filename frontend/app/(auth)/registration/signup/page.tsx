@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import {
@@ -124,30 +126,46 @@ const courseCategories = {
   },
 };
 
-// Interest categories matching the AI model
+// Interest categories matching the AI model - use labels as values
 const interestCategories = [
-  { id: "technology", label: "Technology", icon: HiOutlineComputerDesktop },
-  { id: "healthcare", label: "Healthcare", icon: HiOutlineHeart },
-  { id: "business", label: "Business", icon: HiOutlineBuildingOffice2 },
-  { id: "engineering", label: "Engineering", icon: HiOutlineCog6Tooth },
-  { id: "design", label: "Design & Arts", icon: HiOutlinePaintBrush },
-  { id: "teaching", label: "Teaching", icon: HiOutlineAcademicCap },
-  { id: "research", label: "Research", icon: HiOutlineBeaker },
-  { id: "data_analytics", label: "Data Analytics", icon: HiOutlineComputerDesktop },
-  { id: "financial_analysis", label: "Finance", icon: HiOutlineBuildingOffice2 },
-  { id: "marketing", label: "Marketing", icon: HiOutlineChatBubbleLeftRight },
-  { id: "sales", label: "Sales", icon: HiOutlineTrophy },
-  { id: "law", label: "Law & Government", icon: HiOutlineScale },
-  { id: "entrepreneurship", label: "Entrepreneurship", icon: HiOutlineBuildingOffice2 },
-  { id: "web", label: "Web Development", icon: HiOutlineComputerDesktop },
-  { id: "gaming", label: "Gaming", icon: HiOutlineTrophy },
-  { id: "journalism", label: "Media & Journalism", icon: HiOutlineChatBubbleLeftRight },
+  { id: "Technology", label: "Technology", icon: HiOutlineComputerDesktop },
+  { id: "Healthcare", label: "Healthcare", icon: HiOutlineHeart },
+  { id: "Business", label: "Business", icon: HiOutlineBuildingOffice2 },
+  { id: "Engineering", label: "Engineering", icon: HiOutlineCog6Tooth },
+  { id: "Design & Arts", label: "Design & Arts", icon: HiOutlinePaintBrush },
+  { id: "Teaching", label: "Teaching", icon: HiOutlineAcademicCap },
+  { id: "Research", label: "Research", icon: HiOutlineBeaker },
+  { id: "Data Analytics", label: "Data Analytics", icon: HiOutlineComputerDesktop },
+  { id: "Financial Analysis", label: "Finance", icon: HiOutlineBuildingOffice2 },
+  { id: "Marketing", label: "Marketing", icon: HiOutlineChatBubbleLeftRight },
+  { id: "Sales", label: "Sales", icon: HiOutlineTrophy },
+  { id: "Law & Government", label: "Law & Government", icon: HiOutlineScale },
+  { id: "Entrepreneurship", label: "Entrepreneurship", icon: HiOutlineBuildingOffice2 },
+  { id: "Web Development", label: "Web Development", icon: HiOutlineComputerDesktop },
+  { id: "Gaming", label: "Gaming", icon: HiOutlineTrophy },
+  { id: "Media & Journalism", label: "Media & Journalism", icon: HiOutlineChatBubbleLeftRight },
 ];
 
 const careerLifestyleOptions = ["High income potential", "Work-life balance", "Job security", "Creative freedom", "Making a difference"];
 const workEnvironmentOptions = ["Remote / Work from home", "Office-based", "Hybrid", "Outdoor / Field work", "No preference"];
 const locationPreferenceOptions = ["Stay in my city", "Willing to relocate nationally", "Open to international opportunities", "Prefer remote work"];
 const learningStyleOptions = ["Self-paced online learning", "Classroom / Instructor-led", "Hands-on / Practical experience", "Mentorship", "Mix of all"];
+
+// Common specializations per course category for better AI model matching
+const specializationOptions: Record<string, string[]> = {
+  engineering: ["Computer Science Engineering", "Mechanical Engineering", "Civil Engineering", "Electrical Engineering", "Electronics Engineering", "Instrumentation Engineering", "Chemical Engineering", "Automobile Engineering"],
+  science: ["Computer Applications", "Physics", "Mathematics", "Chemistry", "Biology", "Biotechnology", "Statistics", "Environmental Science"],
+  commerce: ["Accountancy", "Finance", "Economics", "Banking", "Taxation"],
+  business: ["Marketing", "Finance", "Human Resource Management", "Operations Management", "International Business"],
+  computer: ["Computer Science", "Information Technology", "Data Science", "Software Engineering", "Artificial Intelligence", "Cybersecurity", "Networking"],
+  arts: ["Psychology", "Sociology", "Economics", "English Literature", "Political Science", "History"],
+  law: ["Corporate Law", "Criminal Law", "Civil Law", "International Law"],
+  medical: ["General Medicine", "Surgery", "Dental Surgery", "Nursing", "Pharmacy", "Physiotherapy"],
+  media: ["Journalism", "Mass Communication", "Digital Media", "Film Studies"],
+  architecture: ["Architecture", "Interior Design", "Urban Planning"],
+  hospitality: ["Hotel Management", "Tourism Management", "Event Management"],
+  other: [],
+};
 
 // College interface
 interface College {
@@ -195,6 +213,7 @@ const progressDotVariants = {
 };
 
 export default function Signup() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [currentSubStep, setCurrentSubStep] = useState(0);
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -203,23 +222,71 @@ export default function Signup() {
   const [colleges, setColleges] = useState<College[]>([]);
   const [collegeSearch, setCollegeSearch] = useState("");
   const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [generatingStep, setGeneratingStep] = useState("");
 
   const totalSteps = 5;
 
-  // Load colleges from CSV
+  // Load colleges from CSV - proper parser for multiline quoted fields
   useEffect(() => {
     const loadColleges = async () => {
       try {
         const response = await fetch("/Colleges in Nepal.csv");
         const text = await response.text();
-        const lines = text.split("\n").slice(1); // Skip header
-        const parsedColleges: College[] = lines
-          .filter(line => line.trim())
-          .map(line => {
-            const [name, location, university, courseOffered] = line.split(",").map(s => s?.trim() || "");
-            return { name, location, university, courseOffered };
-          })
-          .filter(c => c.name);
+        
+        // Proper CSV parsing that handles quoted multiline fields
+        const records: string[][] = [];
+        let current: string[] = [];
+        let field = "";
+        let inQuotes = false;
+        
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          
+          if (inQuotes) {
+            if (ch === '"' && text[i + 1] === '"') {
+              field += '"';
+              i++; // skip escaped quote
+            } else if (ch === '"') {
+              inQuotes = false;
+            } else {
+              field += ch;
+            }
+          } else {
+            if (ch === '"') {
+              inQuotes = true;
+            } else if (ch === ',') {
+              current.push(field.trim());
+              field = "";
+            } else if (ch === '\n' || ch === '\r') {
+              if (ch === '\r' && text[i + 1] === '\n') i++;
+              current.push(field.trim());
+              field = "";
+              if (current.length > 1) records.push(current);
+              current = [];
+            } else {
+              field += ch;
+            }
+          }
+        }
+        // Push last record
+        if (current.length > 0 || field.length > 0) {
+          current.push(field.trim());
+          if (current.length > 1) records.push(current);
+        }
+        
+        // Skip header row, parse columns: index,College,Location,University,Course Offered,...
+        const parsedColleges: College[] = records.slice(1)
+          .filter(row => row.length >= 4 && row[1])
+          .map(row => ({
+            name: row[1] || "",
+            location: row[2] || "",
+            university: row[3] || "",
+            courseOffered: row[4] || "",
+          }))
+          .filter(c => c.name && c.name !== "College");
+        
         setColleges(parsedColleges);
       } catch (error) {
         console.error("Failed to load colleges:", error);
@@ -234,9 +301,9 @@ export default function Signup() {
     const searchLower = collegeSearch.toLowerCase();
     return colleges
       .filter(c => 
-        c.name.toLowerCase().includes(searchLower) ||
-        c.location.toLowerCase().includes(searchLower) ||
-        c.university.toLowerCase().includes(searchLower)
+        c.name?.toLowerCase().includes(searchLower) ||
+        c.location?.toLowerCase().includes(searchLower) ||
+        c.university?.toLowerCase().includes(searchLower)
       )
       .slice(0, 10);
   }, [colleges, collegeSearch]);
@@ -278,8 +345,61 @@ export default function Signup() {
     }
   };
 
-  const handleSubmit = () => {
-    console.log("Form submitted:", formData);
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Step 1: Create account + profile
+      setGeneratingStep("Creating your account...");
+      const signupResponse = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!signupResponse.ok) {
+        const errorData = await signupResponse.json();
+        throw new Error(errorData.error || "Failed to create account");
+      }
+
+      // Step 2: Sign in with the new credentials
+      setGeneratingStep("Signing you in...");
+      const signInResult = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        throw new Error("Account created but sign-in failed. Please try logging in.");
+      }
+
+      // Step 3: Call AI backend for recommendations
+      setGeneratingStep("Analyzing your profile with AI...");
+      try {
+        const recResponse = await fetch("/api/users/recommendations", {
+          method: "POST",
+        });
+
+        if (!recResponse.ok) {
+          console.warn("AI recommendations failed, will show empty dashboard");
+        }
+      } catch (aiError) {
+        // Don't block signup if AI backend is down
+        console.warn("AI backend unreachable:", aiError);
+      }
+
+      // Step 4: Redirect to dashboard
+      setGeneratingStep("Preparing your dashboard...");
+      router.push("/dashboard?new=true");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Something went wrong";
+      setSubmitError(message);
+      setIsSubmitting(false);
+      setGeneratingStep("");
+    }
   };
 
   const getButtonText = () => {
@@ -501,14 +621,27 @@ export default function Signup() {
               </div>
             )}
             <div className="w-full gap-2 flex flex-col">
-              <label className="font-medium text-sm">Specialization (Optional)</label>
-              <input
-                type="text"
-                placeholder="e.g., Computer Science, Finance, Marketing"
-                value={formData.specialization}
-                onChange={(e) => handleInputChange("specialization", e.target.value)}
-                className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
-              />
+              <label className="font-medium text-sm">Specialization</label>
+              {formData.courseCategory && specializationOptions[formData.courseCategory]?.length > 0 ? (
+                <select
+                  value={formData.specialization}
+                  onChange={(e) => handleInputChange("specialization", e.target.value)}
+                  className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select your specialization</option>
+                  {specializationOptions[formData.courseCategory]?.map((spec) => (
+                    <option key={spec} value={spec}>{spec}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="e.g., Computer Science, Finance, Marketing"
+                  value={formData.specialization}
+                  onChange={(e) => handleInputChange("specialization", e.target.value)}
+                  className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all"
+                />
+              )}
             </div>
             <div className="w-full gap-2 flex flex-col relative">
               <label className="font-medium text-sm">School / College Name</label>
@@ -577,22 +710,44 @@ export default function Signup() {
       className="w-full flex-1 flex flex-col px-8 md:px-16 lg:px-32 xl:px-64 py-8 overflow-y-auto"
     >
       <div className="max-w-2xl mx-auto w-full space-y-10">
-        {/* Interests Section - Dropdown */}
+        {/* Interests Section - Multi-select chips */}
         <motion.div variants={staggerItem} className="space-y-4">
           <div className="space-y-2">
             <h2 className="text-2xl font-bold">Interests</h2>
-            <p className="text-gray-600 text-sm">Select your primary area of interest:</p>
+            <p className="text-gray-600 text-sm">Select your areas of interest (choose up to 3):</p>
           </div>
-          <select
-            value={formData.interests[0] || ""}
-            onChange={(e) => handleInputChange("interests", e.target.value ? [e.target.value] : [])}
-            className="w-full px-4 py-3 border-b-2 border-neutral-300 bg-transparent focus:outline-none focus:border-neutral-900 transition-all appearance-none cursor-pointer"
-          >
-            <option value="">Select your interest</option>
-            {interestCategories.map((category) => (
-              <option key={category.id} value={category.id}>{category.label}</option>
-            ))}
-          </select>
+          <div className="flex flex-wrap gap-2">
+            {interestCategories.map((category) => {
+              const isSelected = formData.interests.includes(category.id);
+              const Icon = category.icon;
+              return (
+                <motion.button
+                  key={category.id}
+                  type="button"
+                  onClick={() => {
+                    if (isSelected) {
+                      handleInputChange("interests", formData.interests.filter(i => i !== category.id));
+                    } else if (formData.interests.length < 3) {
+                      handleInputChange("interests", [...formData.interests, category.id]);
+                    }
+                  }}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 text-sm font-medium transition-all ${
+                    isSelected
+                      ? "border-neutral-900 bg-neutral-900 text-white"
+                      : "border-neutral-200 hover:border-neutral-400"
+                  } ${!isSelected && formData.interests.length >= 3 ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+                >
+                  <Icon size={16} />
+                  {category.label}
+                </motion.button>
+              );
+            })}
+          </div>
+          {formData.interests.length > 0 && (
+            <p className="text-xs text-gray-500">{formData.interests.length}/3 selected</p>
+          )}
         </motion.div>
 
         {/* Skills Section - Input Fields */}
@@ -935,7 +1090,63 @@ export default function Signup() {
   };
 
   return (
-    <main className="min-h-screen w-full">
+    <main className="min-h-screen w-full relative">
+      {/* AI Generating Overlay */}
+      <AnimatePresence>
+        {isSubmitting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              className="text-center space-y-8"
+            >
+              <div className="relative">
+                <div className="w-20 h-20 border-4 border-neutral-200 border-t-neutral-900 rounded-full animate-spin mx-auto"></div>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [0, 1.2, 1] }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-xs">SL</span>
+                  </div>
+                </motion.div>
+              </div>
+              <div className="space-y-3">
+                <motion.h2
+                  key={generatingStep}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-2xl font-bold text-neutral-900"
+                >
+                  {generatingStep || "Setting up..."}
+                </motion.h2>
+                <p className="text-neutral-500 text-sm max-w-sm mx-auto">
+                  Our AI is analyzing your profile to generate personalized career recommendations. This may take a moment.
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 justify-center">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-2 h-2 bg-neutral-400 rounded-full"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="h-screen flex flex-col items-center justify-between overflow-hidden">
         {/* Navigation */}
         <nav className="flex w-full justify-between items-center h-16 md:h-20 px-6 md:px-20 shrink-0">
@@ -995,14 +1206,28 @@ export default function Signup() {
 
         {/* Footer */}
         <footer className="flex justify-between items-center border-t border-neutral-200 h-16 md:h-20 px-6 md:px-20 w-full shrink-0">
-          <p className="text-gray-500 text-sm hidden md:block max-w-xl">
-            &quot;{getFooterQuote()}&quot;
-          </p>
+          <div className="flex-1">
+            {submitError && (
+              <motion.p
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-red-600 text-sm font-medium"
+              >
+                {submitError}
+              </motion.p>
+            )}
+            {!submitError && (
+              <p className="text-gray-500 text-sm hidden md:block max-w-xl">
+                &quot;{getFooterQuote()}&quot;
+              </p>
+            )}
+          </div>
           <motion.button
             onClick={handleNext}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="btn-primary flex items-center gap-2 ml-auto cursor-pointer"
+            disabled={isSubmitting}
+            className={`btn-primary flex items-center gap-2 ml-auto cursor-pointer ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {getButtonText()}
             {currentStep === 5 && currentSubStep === 1 && <HiOutlineCheck size={18} />}

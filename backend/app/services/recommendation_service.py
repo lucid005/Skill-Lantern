@@ -6,7 +6,9 @@ Combines all services to provide complete career recommendations.
 from typing import Optional, Dict, Any, List
 import logging
 
-from app.services.ollama_service import ollama_service
+import asyncio
+
+from app.services.gemini_service import gemini_service, GeminiServiceError
 from app.services.college_service import college_service
 from app.services.roadmap_service import roadmap_service
 from app.prompts.college_prompts import COLLEGE_SYSTEM_PROMPT, get_college_user_prompt
@@ -31,7 +33,7 @@ class RecommendationService:
     """Service for generating complete career recommendations."""
     
     def __init__(self):
-        self.ollama = ollama_service
+        self.llm = gemini_service
         self.college_svc = college_service
         self.roadmap_svc = roadmap_service
     
@@ -85,14 +87,15 @@ class RecommendationService:
                 filtered_colleges=formatted_colleges
             )
             
-            raw_response = await self.ollama.generate(
+            raw_response = await self.llm.generate(
                 prompt=user_prompt,
                 system_prompt=COLLEGE_SYSTEM_PROMPT,
-                temperature=0.5
+                temperature=0.3,
+                max_tokens=768
             )
             
             # Parse response
-            parsed = self.ollama.parse_json_response(raw_response)
+            parsed = self.llm.parse_json_response(raw_response)
             
             return self._build_college_response(request.career_name, parsed, colleges, raw_response)
             
@@ -193,20 +196,26 @@ class RecommendationService:
             # Select top career
             selected_career = predicted_careers[0].career if predicted_careers else "Software Developer"
             
-            # Generate roadmap
-            roadmap = await self.roadmap_svc.generate_roadmap(
-                career_name=selected_career,
-                user_profile=request.user_profile
-            )
-            
-            # Get college recommendations
+            # Generate roadmap and college recommendations IN PARALLEL for speed
             college_request = CollegeRequest(
                 career_name=selected_career,
                 preferred_location=request.preferred_location,
                 budget_range=request.budget_range,
                 degree_level=request.degree_level
             )
-            colleges = await self.get_college_recommendations(college_request)
+            
+            roadmap_task = asyncio.create_task(
+                self.roadmap_svc.generate_roadmap(
+                    career_name=selected_career,
+                    user_profile=request.user_profile
+                )
+            )
+            college_task = asyncio.create_task(
+                self.get_college_recommendations(college_request)
+            )
+            
+            # Wait for both to complete concurrently
+            roadmap, colleges = await asyncio.gather(roadmap_task, college_task)
             
             # Generate final summary
             roadmap_summary = self.roadmap_svc.get_roadmap_summary(roadmap)
@@ -218,14 +227,25 @@ class RecommendationService:
                 roadmap_summary=roadmap_summary,
                 college_summary=college_summary
             )
-            
-            summary_response = await self.ollama.generate(
-                prompt=summary_prompt,
-                system_prompt=SUMMARY_SYSTEM_PROMPT,
-                temperature=0.7
-            )
-            
-            parsed_summary = self.ollama.parse_json_response(summary_response)
+
+            summary_response = None
+            try:
+                summary_response = await self.llm.generate(
+                    prompt=summary_prompt,
+                    system_prompt=SUMMARY_SYSTEM_PROMPT,
+                    temperature=0.5,
+                    max_tokens=512
+                )
+                parsed_summary = self.llm.parse_json_response(summary_response)
+            except Exception as error:
+                logger.warning("Summary generation unavailable, using local fallback: %s", error)
+                parsed_summary = self._get_fallback_summary(
+                    career_name=selected_career,
+                    user_name=request.user_profile.name,
+                    roadmap=roadmap,
+                    colleges=colleges,
+                    error=error,
+                )
             
             return FullRecommendationResponse(
                 predicted_careers=predicted_careers,
@@ -256,6 +276,53 @@ class RecommendationService:
                 summary_parts.append(f"   Programs: {', '.join(college.programs[:2])}")
         
         return "\n".join(summary_parts)
+
+    def _get_fallback_summary(
+        self,
+        career_name: str,
+        user_name: Optional[str],
+        roadmap: RoadmapResponse,
+        colleges: CollegeRecommendationResponse,
+        error: Exception,
+    ) -> Dict[str, Any]:
+        """Build a deterministic summary when Gemini is unavailable."""
+        first_stage = roadmap.stages[0] if roadmap.stages else None
+        lead_name = user_name or "You"
+
+        summary_parts = [
+            f"{lead_name} appear to be a strong fit for {career_name} based on the profile signals used in the career prediction model.",
+            f"Your roadmap already outlines a practical path from {roadmap.stages[0].level.lower()} to advanced readiness." if roadmap.stages else f"A structured roadmap is available to help you move toward {career_name}.",
+        ]
+
+        if colleges.recommendations:
+            top_college_names = ", ".join(college.name for college in colleges.recommendations[:3])
+            summary_parts.append(f"Relevant colleges were also identified, including {top_college_names}.")
+
+        if isinstance(error, GeminiServiceError) and error.is_quota_exhausted:
+            summary_parts.append("The final AI-generated summary was skipped because the configured Gemini API quota is exhausted.")
+
+        immediate_actions: List[str] = []
+
+        if first_stage and first_stage.skills:
+            immediate_actions.append(f"Start with the {first_stage.level.lower()} roadmap stage and focus on {', '.join(first_stage.skills[:3])}.")
+
+        if first_stage and first_stage.resources:
+            immediate_actions.append(f"Use {first_stage.resources[0]} as your first learning resource.")
+
+        if colleges.recommendations:
+            immediate_actions.append(f"Review admission details for {colleges.recommendations[0].name} and compare it with two alternative colleges.")
+
+        if len(immediate_actions) < 3:
+            immediate_actions.extend([
+                "Shortlist one target role and map the required skills against your current profile.",
+                "Build one small project that demonstrates the core skills for this career.",
+                "Set a weekly learning schedule and track progress against the roadmap milestones.",
+            ])
+
+        return {
+            "career_fit_explanation": " ".join(summary_parts),
+            "immediate_actions": immediate_actions[:3],
+        }
 
 
 # Singleton instance

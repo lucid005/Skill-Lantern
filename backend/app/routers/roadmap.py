@@ -13,7 +13,7 @@ from app.models.schemas import (
     ErrorResponse
 )
 from app.services.roadmap_service import roadmap_service
-from app.services.ollama_service import ollama_service
+from app.services.gemini_service import gemini_service
 from app.prompts.roadmap_prompts import ROADMAP_SYSTEM_PROMPT, get_roadmap_user_prompt
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ router = APIRouter(prefix="/roadmap", tags=["Career Roadmap"])
 )
 async def generate_roadmap(request: RoadmapRequest):
     """
-    Generate a detailed career roadmap using LLaMA/Ollama.
+    Generate a detailed career roadmap using Gemini API.
     
     Returns a structured roadmap with:
     - Career overview
@@ -70,7 +70,7 @@ async def generate_roadmap_stream(request: RoadmapRequest):
             )
             
             # Stream response
-            async for chunk in ollama_service.generate_stream(
+            async for chunk in gemini_service.generate_stream(
                 prompt=user_prompt,
                 system_prompt=ROADMAP_SYSTEM_PROMPT
             ):

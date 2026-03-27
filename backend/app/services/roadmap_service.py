@@ -1,12 +1,12 @@
 """
 Roadmap Service - Career Roadmap Generation
-Generates career roadmaps using Ollama/LLaMA.
+Generates career roadmaps using Gemini API.
 """
 
 from typing import Optional, Dict, Any
 import logging
 
-from app.services.ollama_service import ollama_service
+from app.services.gemini_service import gemini_service
 from app.prompts.roadmap_prompts import ROADMAP_SYSTEM_PROMPT, get_roadmap_user_prompt
 from app.models.schemas import UserProfile, RoadmapResponse, RoadmapStage
 
@@ -17,7 +17,7 @@ class RoadmapService:
     """Service for generating career roadmaps."""
     
     def __init__(self):
-        self.ollama = ollama_service
+        self.llm = gemini_service
         
     async def generate_roadmap(
         self,
@@ -45,14 +45,15 @@ class RoadmapService:
             )
             
             # Generate response
-            raw_response = await self.ollama.generate(
+            raw_response = await self.llm.generate(
                 prompt=user_prompt,
                 system_prompt=ROADMAP_SYSTEM_PROMPT,
-                temperature=0.7
+                temperature=0.5,
+                max_tokens=768
             )
             
             # Parse JSON response
-            parsed = self.ollama.parse_json_response(raw_response)
+            parsed = self.llm.parse_json_response(raw_response)
             
             # Build structured response
             return self._build_roadmap_response(career_name, parsed, raw_response)

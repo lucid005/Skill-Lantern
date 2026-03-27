@@ -20,49 +20,19 @@ def get_college_user_prompt(
     """Generate user prompt for college recommendations."""
     
     courses_str = ", ".join(required_courses) if required_courses else "Related to " + career_name
-    location_str = preferred_location if preferred_location else "Any location in Nepal"
+    location_str = preferred_location if preferred_location else "Any"
     budget_str = budget_range if budget_range else "Flexible"
     
-    return f"""Target Career: {career_name}
-Required Course(s): {courses_str}
+    return f"""Career: {career_name} | Courses: {courses_str} | Location: {location_str} | Budget: {budget_str} | Degree: {degree_level}
 
-User Preferences:
-- Location: {location_str}
-- Budget: {budget_str}
-- Degree Level: {degree_level}
-
-Available Colleges Data:
+Colleges:
 {filtered_colleges}
 
-Task:
-Based on the user's career goal and preferences:
-1. Recommend the best-matched colleges from the provided data
-2. Explain why each college is suitable
-3. Mention offered programs relevant to the career
-4. Suggest alternative colleges if budget/location is restrictive
+Pick top 3-5 best colleges from above for this career. For each, give name, location, relevant programs, and a short reason. Also suggest 1-2 alternatives. Use ONLY colleges listed above.
 
-Constraints:
-- Use ONLY the provided colleges data
-- No assumptions or invented data
-- Keep explanations concise and factual
-
-Output Format (respond in valid JSON):
-{{
-    "recommendations": [
-        {{
-            "name": "College Name",
-            "location": "Location",
-            "programs": ["Program 1", "Program 2"],
-            "reason": "Why this college is suitable"
-        }}
-    ],
-    "alternatives": [
-        {{
-            "name": "Alternative College Name",
-            "location": "Location",
-            "programs": ["Program 1"],
-            "reason": "Why this is a good alternative"
-        }}
-    ],
-    "notes": "Any additional notes or considerations"
-}}"""
+Respond in JSON:
+{{{{
+  "recommendations": [{{{{"name": "", "location": "", "programs": [], "reason": ""}}}}],
+  "alternatives": [{{{{"name": "", "location": "", "programs": [], "reason": ""}}}}],
+  "notes": ""
+}}}}"""

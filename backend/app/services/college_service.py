@@ -163,33 +163,32 @@ class CollegeService:
         Returns:
             List of relevant colleges
         """
-        # Map careers to relevant program keywords
+        # Map careers to relevant program keywords - MUST match actual career categories
         career_to_programs = {
-            "software engineer": ["computer science", "information technology", "software", "bca", "bsc csit", "computer application"],
-            "data scientist": ["data science", "computer science", "statistics", "mathematics", "machine learning"],
-            "web developer": ["computer", "information technology", "bca", "software", "web"],
-            "network engineer": ["computer", "information technology", "networking", "electronics"],
-            "database administrator": ["computer", "information technology", "database", "data"],
-            "cybersecurity": ["cybersecurity", "ethical hacking", "computer", "information security"],
-            "doctor": ["mbbs", "medicine", "medical", "health science"],
-            "nurse": ["nursing", "bsc nursing", "health"],
-            "pharmacist": ["pharmacy", "pharmaceutical"],
+            "software engineer": ["computer science", "information technology", "software", "bca", "bsc csit", "computer application", "computer engineering"],
+            "data scientist": ["data science", "computer science", "statistics", "mathematics", "machine learning", "bsc csit", "information technology"],
+            "data analyst": ["data science", "computer science", "statistics", "mathematics", "information technology", "bsc csit", "bca"],
+            "web developer": ["computer science", "information technology", "bca", "software", "computer application", "bsc csit"],
+            "mobile app developer": ["computer science", "information technology", "software", "bca", "bsc csit", "computer application"],
+            "network engineer": ["computer science", "information technology", "networking", "electronics", "computer engineering"],
+            "database administrator": ["computer science", "information technology", "bca", "bsc csit", "data"],
+            "devops engineer": ["computer science", "information technology", "software", "bsc csit", "computer engineering"],
+            "cybersecurity analyst": ["cybersecurity", "computer science", "information technology", "information security", "computer engineering"],
+            "product manager": ["business", "management", "bba", "mba", "information technology", "computer science"],
+            "project manager": ["business", "management", "bba", "mba", "project management"],
+            "ui/ux designer": ["design", "fine arts", "multimedia", "computer application", "information technology", "bca"],
+            "quality assurance engineer": ["computer science", "information technology", "software", "bca", "bsc csit"],
+            "teacher/educator": ["education", "bed", "med", "bachelor of education", "master of education"],
+            "financial analyst": ["accounting", "commerce", "bba", "bbs", "finance", "mba", "bcom"],
+            "marketing specialist": ["marketing", "business", "management", "bba", "mba", "bbs"],
+            "hr manager": ["business", "management", "bba", "mba", "human resource"],
+            "it consultant": ["computer science", "information technology", "management", "bca", "mba", "bsc csit"],
+            "research scientist": ["science", "research", "physics", "chemistry", "biology", "biotechnology", "mathematics"],
+            "healthcare professional": ["mbbs", "medicine", "medical", "health science", "nursing", "pharmacy"],
+            "mechanical engineer": ["mechanical engineering", "automobile"],
             "civil engineer": ["civil engineering", "construction"],
-            "mechanical engineer": ["mechanical engineering"],
-            "electrical engineer": ["electrical", "electronics"],
-            "accountant": ["accounting", "commerce", "bba", "bbs", "finance"],
-            "business analyst": ["business", "management", "bba", "mba"],
-            "marketing": ["marketing", "business", "management", "mba"],
-            "hotel management": ["hotel", "hospitality", "tourism"],
-            "teacher": ["education", "bed", "med"],
-            "lawyer": ["law", "llb", "legal"],
-            "psychologist": ["psychology", "counseling"],
-            "journalist": ["journalism", "mass communication", "media"],
-            "graphic designer": ["design", "fine arts", "multimedia"],
-            "architect": ["architecture"],
-            "agriculture": ["agriculture", "agricultural"],
-            "forestry": ["forestry", "environmental"],
-            "biotechnology": ["biotechnology", "biomedical"],
+            "electrical engineer": ["electrical", "electronics", "electronics and communication"],
+            "business manager": ["business", "management", "bba", "mba", "bbm", "bbs"],
         }
         
         career_lower = career.lower()
@@ -207,9 +206,9 @@ class CollegeService:
         
         return self.filter_colleges(career_keywords=keywords)
     
-    def format_colleges_for_prompt(self, colleges: List[Dict[str, Any]], max_colleges: int = 15) -> str:
+    def format_colleges_for_prompt(self, colleges: List[Dict[str, Any]], max_colleges: int = 8) -> str:
         """
-        Format college data for LLM prompt.
+        Format college data for LLM prompt (compact format to reduce tokens).
         
         Args:
             colleges: List of college dictionaries
@@ -226,15 +225,11 @@ class CollegeService:
         
         formatted = []
         for i, college in enumerate(colleges, 1):
-            entry = f"""
-{i}. {college.get('College', 'Unknown')}
-   - Location: {college.get('Location', 'N/A')}
-   - University: {college.get('University', 'N/A')}
-   - Programs: {college.get('Course Offered', 'N/A')[:300]}...
-   - Type: {college.get('Ownership Type', 'N/A')}
-   - Contact: {college.get('Phone Number', 'N/A')} | {college.get('Email', 'N/A')}
-"""
-            formatted.append(entry)
+            name = college.get('College', 'Unknown')
+            loc = college.get('Location', 'N/A')
+            programs = college.get('Course Offered', 'N/A')[:150]
+            uni = college.get('University', '')
+            formatted.append(f"{i}. {name} | {loc} | {uni} | Programs: {programs}")
         
         return "\n".join(formatted)
 

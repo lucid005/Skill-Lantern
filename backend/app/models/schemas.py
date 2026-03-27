@@ -157,7 +157,7 @@ class FullRecommendationResponse(BaseModel):
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str = Field(default="healthy")
-    ollama_status: str = Field(default="unknown")
+    gemini_status: str = Field(default="unknown")
     model_loaded: bool = Field(default=False)
     version: str = Field(default="1.0.0")
 

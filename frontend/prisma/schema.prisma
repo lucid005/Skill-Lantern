@@ -109,7 +109,7 @@ model CareerRecommendation {
   predictions       Json     // Array of { career, confidence, description }
   topCareer         String?
   
-  // Full Details (from LLaMA) - populated when user requests details
+  // Full Details (from Gemini) - populated when user requests details
   roadmap           Json?    // { overview, stages, tools, job_roles, growth_paths }
   colleges          Json?    // { recommendations, alternatives, notes }
   summary           String?  @db.Text
@@ -117,6 +117,10 @@ model CareerRecommendation {
   
   // Status
   hasFullDetails    Boolean  @default(false)
+  roadmapProgress   Json?
+  userFeedback      String?
+  feedbackComment   String?  @db.Text
+  feedbackCreatedAt DateTime?
   
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

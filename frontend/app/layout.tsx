@@ -1,17 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-montserrat",
-});
 
 export const metadata: Metadata = {
   title: "Skill Lantern | AI-Powered Career Recommendations",
@@ -31,10 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body
-        className={`${inter.variable} ${montserrat.variable} antialiased bg-background text-foreground`}
-      >
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <body className="antialiased bg-background text-foreground" suppressHydrationWarning>
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

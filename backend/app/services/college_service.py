@@ -188,6 +188,7 @@ class CollegeService:
             "mechanical engineer": ["mechanical engineering", "automobile"],
             "civil engineer": ["civil engineering", "construction"],
             "electrical engineer": ["electrical", "electronics", "electronics and communication"],
+            "legal professional": ["law", "llb", "llm", "ballb", "ba llb", "legal", "jurisprudence"],
             "business manager": ["business", "management", "bba", "mba", "bbm", "bbs"],
         }
         

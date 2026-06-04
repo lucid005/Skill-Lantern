@@ -29,7 +29,7 @@ export default function Features() {
       title: "Comprehensive Skill Gap Analysis",
       description: "Identify exactly what skills you need to develop to succeed in your chosen career. Our platform maps your current abilities against industry requirements and shows you the path forward.",
       benefits: [
-        "Real-time skill assessment",
+        "Profile-based skill assessment",
         "Industry-standard benchmarking",
         "Priority-ranked skill gaps",
         "Progress tracking over time",
@@ -56,8 +56,8 @@ export default function Features() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
         </svg>
       ),
-      title: "Real-Time Market Insights",
-      description: "Make informed decisions with up-to-date job market data. Understand salary ranges, growth projections, demand trends, and industry dynamics for every career path.",
+      title: "Career Context",
+      description: "Make informed decisions with practical guidance on skills, roadmap stages, entry roles, and growth paths for each recommended career.",
       benefits: [
         "Salary benchmarking data",
         "Job market demand analysis",
@@ -71,7 +71,7 @@ export default function Features() {
     {
       icon: "🎯",
       title: "Precision Matching",
-      description: "95% accuracy in career recommendations based on comprehensive profile analysis.",
+      description: "Ranked career recommendations based on comprehensive profile analysis.",
     },
     {
       icon: "🔒",

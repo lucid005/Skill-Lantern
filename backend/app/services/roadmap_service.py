@@ -39,17 +39,22 @@ class RoadmapService:
             user_prompt = get_roadmap_user_prompt(
                 career_name=career_name,
                 education_level=user_profile.education_level.value,
+                ug_course=user_profile.ug_course,
+                specialization=user_profile.specialization,
                 skills=user_profile.skills,
                 interests=user_profile.interests,
-                preferences=user_profile.preferences
+                preferences=user_profile.preferences,
+                cgpa=user_profile.cgpa,
+                certifications=user_profile.certifications,
+                location=user_profile.location
             )
             
             # Generate response
             raw_response = await self.llm.generate(
                 prompt=user_prompt,
                 system_prompt=ROADMAP_SYSTEM_PROMPT,
-                temperature=0.5,
-                max_tokens=768
+                temperature=0.25,
+                max_tokens=1400
             )
             
             # Parse JSON response
@@ -122,13 +127,89 @@ class RoadmapService:
                 milestones=["Get internship", "Land first job"]
             )
         ]
+
+    def _get_career_specific_stages(self, career_name: str) -> list:
+        """Get deterministic career-specific stages when LLM output is unavailable."""
+        career = career_name.lower()
+        plans = {
+            "software engineer": [
+                RoadmapStage(
+                    level="Beginner",
+                    duration="3-4 months",
+                    skills=["Programming fundamentals", "Git and GitHub", "Data structures basics", "HTML/CSS/JavaScript or Python", "Debugging"],
+                    resources=["freeCodeCamp Responsive Web Design", "CS50x lectures", "Python official tutorial", "GitHub Skills", "MDN Web Docs"],
+                    milestones=["Publish 3 small projects on GitHub", "Solve 50 beginner coding problems", "Build a personal portfolio site"],
+                ),
+                RoadmapStage(
+                    level="Intermediate",
+                    duration="5-8 months",
+                    skills=["Object-oriented programming", "REST APIs", "Database design with SQL", "Testing basics", "Frontend or backend framework"],
+                    resources=["Full Stack Open", "The Odin Project", "PostgreSQL Tutorial", "FastAPI or Django docs", "React docs"],
+                    milestones=["Build one full-stack CRUD app", "Add authentication and database persistence", "Write tests for core features"],
+                ),
+                RoadmapStage(
+                    level="Advanced",
+                    duration="8-12 months",
+                    skills=["System design basics", "Deployment", "CI/CD", "Performance optimization", "Interview preparation"],
+                    resources=["System Design Primer", "Docker getting started", "GitHub Actions docs", "LeetCode study plan", "Render/Railway deployment docs"],
+                    milestones=["Deploy 2 production-style apps", "Contribute to one open-source issue", "Prepare a resume and apply for internships or junior roles"],
+                ),
+            ],
+            "data scientist": [
+                RoadmapStage(
+                    level="Beginner",
+                    duration="3-4 months",
+                    skills=["Python", "Statistics basics", "Pandas", "Data cleaning", "Visualization"],
+                    resources=["Kaggle Learn Python", "Kaggle Learn Pandas", "StatQuest YouTube", "freeCodeCamp Data Analysis with Python", "Matplotlib docs"],
+                    milestones=["Complete 3 cleaned datasets", "Publish one notebook with charts", "Explain mean, variance, correlation, and regression"],
+                ),
+                RoadmapStage(
+                    level="Intermediate",
+                    duration="5-8 months",
+                    skills=["Machine learning", "Scikit-learn", "Feature engineering", "Model evaluation", "SQL"],
+                    resources=["Google Machine Learning Crash Course", "Kaggle Intro to Machine Learning", "Scikit-learn docs", "Mode SQL Tutorial", "Coursera ML audit content"],
+                    milestones=["Train and compare 3 ML models", "Create an end-to-end prediction project", "Write a model evaluation report"],
+                ),
+                RoadmapStage(
+                    level="Advanced",
+                    duration="8-12 months",
+                    skills=["Deep learning basics", "MLOps basics", "Model deployment", "Experiment tracking", "Portfolio storytelling"],
+                    resources=["fast.ai Practical Deep Learning", "TensorFlow tutorials", "MLflow docs", "Hugging Face course", "Streamlit docs"],
+                    milestones=["Deploy one ML demo app", "Build a portfolio with 3 polished case studies", "Apply for data internships or junior analyst/scientist roles"],
+                ),
+            ],
+            "web developer": [
+                RoadmapStage(
+                    level="Beginner",
+                    duration="2-4 months",
+                    skills=["HTML", "CSS", "JavaScript", "Responsive design", "Git"],
+                    resources=["freeCodeCamp Responsive Web Design", "MDN JavaScript Guide", "The Odin Project Foundations", "Kevin Powell CSS YouTube", "GitHub Skills"],
+                    milestones=["Build 5 responsive pages", "Publish code on GitHub", "Create a portfolio homepage"],
+                ),
+                RoadmapStage(
+                    level="Intermediate",
+                    duration="4-7 months",
+                    skills=["React or Next.js", "API integration", "Forms and validation", "Authentication basics", "Database-backed apps"],
+                    resources=["React docs", "Next.js Learn", "Supabase docs", "Full Stack Open", "TanStack Query docs"],
+                    milestones=["Build a dashboard app", "Connect frontend to an API", "Deploy one full-stack project"],
+                ),
+                RoadmapStage(
+                    level="Advanced",
+                    duration="6-10 months",
+                    skills=["Performance", "Accessibility", "Testing", "Deployment pipelines", "UI architecture"],
+                    resources=["web.dev", "Testing Library docs", "Playwright docs", "Vercel docs", "A11y Project"],
+                    milestones=["Improve Lighthouse scores above 90", "Add automated tests", "Apply for frontend internships or freelance projects"],
+                ),
+            ],
+        }
+        return plans.get(career_name.lower(), plans.get(career, self._get_default_stages()))
     
     def _get_fallback_roadmap(self, career_name: str) -> RoadmapResponse:
         """Return a fallback roadmap when LLM fails."""
         return RoadmapResponse(
             career=career_name,
             overview=f"A structured path to becoming a {career_name}. This roadmap covers the essential skills and milestones needed to enter this field.",
-            stages=self._get_default_stages(),
+            stages=self._get_career_specific_stages(career_name),
             tools_and_technologies=["Industry-standard tools", "Modern frameworks"],
             job_roles=["Entry-level positions", "Junior roles", "Associate roles"],
             growth_paths=["Senior positions", "Team lead", "Management track", "Specialist track"]

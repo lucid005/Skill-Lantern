@@ -247,12 +247,17 @@ class RecommendationService:
                     error=error,
                 )
             
+            summary = self._format_project_report_summary(
+                parsed_summary=parsed_summary,
+                career_name=selected_career,
+            )
+
             return FullRecommendationResponse(
                 predicted_careers=predicted_careers,
                 selected_career=selected_career,
                 roadmap=roadmap,
                 colleges=colleges,
-                summary=parsed_summary.get("career_fit_explanation", f"You are well-suited for a career as a {selected_career}."),
+                summary=summary,
                 immediate_actions=parsed_summary.get("immediate_actions", [
                     "Research the field and required skills",
                     "Start with free online courses",
@@ -276,6 +281,36 @@ class RecommendationService:
                 summary_parts.append(f"   Programs: {', '.join(college.programs[:2])}")
         
         return "\n".join(summary_parts)
+
+    def _format_project_report_summary(
+        self,
+        parsed_summary: Dict[str, Any],
+        career_name: str,
+    ) -> str:
+        """Format the final report as readable sections for the dashboard/PDF."""
+        career_fit = parsed_summary.get(
+            "career_fit_explanation",
+            f"You are well-suited for a career as a {career_name}.",
+        )
+        key_skills = parsed_summary.get("key_skills") or []
+        education_pathway = parsed_summary.get("education_pathway")
+        motivation_message = parsed_summary.get("motivation_message")
+
+        sections = [
+            ("Career Fit", career_fit),
+        ]
+
+        if key_skills:
+            skills_text = "\n".join(f"- {skill}" for skill in key_skills[:5])
+            sections.append(("Key Skills", skills_text))
+
+        if education_pathway:
+            sections.append(("Education Pathway", education_pathway))
+
+        if motivation_message:
+            sections.append(("Motivation", motivation_message))
+
+        return "\n\n".join(f"{heading}\n{body}" for heading, body in sections if body)
 
     def _get_fallback_summary(
         self,
@@ -321,6 +356,9 @@ class RecommendationService:
 
         return {
             "career_fit_explanation": " ".join(summary_parts),
+            "key_skills": first_stage.skills[:3] if first_stage else [],
+            "education_pathway": "Follow the roadmap stages, compare relevant colleges, and choose a program that supports the target career.",
+            "motivation_message": f"Keep building steadily toward {career_name}; consistent practice and visible projects will make your progress easier to prove.",
             "immediate_actions": immediate_actions[:3],
         }
 

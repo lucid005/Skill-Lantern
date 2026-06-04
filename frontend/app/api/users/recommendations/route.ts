@@ -1,8 +1,28 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+type RecommendationRecord = Awaited<ReturnType<typeof prisma.careerRecommendation.findFirst>>;
+
+function serializeRecommendation(recommendation: NonNullable<RecommendationRecord>) {
+    return {
+        id: recommendation.id,
+        predictions: recommendation.predictions,
+        topCareer: recommendation.topCareer,
+        hasFullDetails: recommendation.hasFullDetails,
+        roadmap: recommendation.roadmap,
+        colleges: recommendation.colleges,
+        summary: recommendation.summary,
+        immediateActions: recommendation.immediateActions,
+        roadmapProgress: recommendation.roadmapProgress,
+        userFeedback: recommendation.userFeedback,
+        feedbackComment: recommendation.feedbackComment,
+        feedbackCreatedAt: recommendation.feedbackCreatedAt?.toISOString() ?? null,
+        createdAt: recommendation.createdAt.toISOString(),
+    };
+}
 
 // Helper: Map DB profile to backend UserProfile format
 function mapProfileToBackendFormat(profile: {
@@ -66,12 +86,23 @@ function mapProfileToBackendFormat(profile: {
     };
 }
 
-// GET - Fetch the latest recommendation for the authenticated user
-export async function GET() {
+// GET - Fetch latest recommendation or full recommendation history for the authenticated user
+export async function GET(request: NextRequest) {
     try {
         const session = await auth();
         if (!session?.user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const includeAll = request.nextUrl.searchParams.get('all') === 'true';
+
+        if (includeAll) {
+            const recommendations = await prisma.careerRecommendation.findMany({
+                where: { userId: session.user.id },
+                orderBy: { createdAt: 'desc' },
+            });
+
+            return NextResponse.json(recommendations.map(serializeRecommendation));
         }
 
         const recommendation = await prisma.careerRecommendation.findFirst({
@@ -83,17 +114,7 @@ export async function GET() {
             return NextResponse.json(null);
         }
 
-        return NextResponse.json({
-            id: recommendation.id,
-            predictions: recommendation.predictions,
-            topCareer: recommendation.topCareer,
-            hasFullDetails: recommendation.hasFullDetails,
-            roadmap: recommendation.roadmap,
-            colleges: recommendation.colleges,
-            summary: recommendation.summary,
-            immediateActions: recommendation.immediateActions,
-            createdAt: recommendation.createdAt.toISOString(),
-        });
+        return NextResponse.json(serializeRecommendation(recommendation));
     } catch (error) {
         console.error('Error fetching recommendations:', error);
         return NextResponse.json(
@@ -159,17 +180,7 @@ export async function POST() {
             },
         });
 
-        return NextResponse.json({
-            id: recommendation.id,
-            predictions: recommendation.predictions,
-            topCareer: recommendation.topCareer,
-            hasFullDetails: recommendation.hasFullDetails,
-            roadmap: recommendation.roadmap,
-            colleges: recommendation.colleges,
-            summary: recommendation.summary,
-            immediateActions: recommendation.immediateActions,
-            createdAt: recommendation.createdAt.toISOString(),
-        });
+        return NextResponse.json(serializeRecommendation(recommendation));
     } catch (error) {
         console.error('Error generating recommendations:', error);
         const message = error instanceof Error ? error.message : 'Failed to generate recommendations';
@@ -189,7 +200,7 @@ export async function PATCH(request: Request) {
         }
 
         const body = await request.json();
-        const { recommendationId } = body;
+        const { recommendationId, action } = body;
 
         if (!recommendationId) {
             return NextResponse.json(
@@ -210,19 +221,50 @@ export async function PATCH(request: Request) {
             );
         }
 
+        if (action === 'feedback') {
+            const feedback = body.userFeedback === 'helpful' || body.userFeedback === 'not_helpful'
+                ? body.userFeedback
+                : null;
+
+            if (!feedback) {
+                return NextResponse.json(
+                    { error: 'Feedback must be helpful or not_helpful' },
+                    { status: 400 }
+                );
+            }
+
+            const updated = await prisma.careerRecommendation.update({
+                where: { id: recommendationId },
+                data: {
+                    userFeedback: feedback,
+                    feedbackComment: typeof body.feedbackComment === 'string'
+                        ? body.feedbackComment.trim().slice(0, 1000) || null
+                        : null,
+                    feedbackCreatedAt: new Date(),
+                },
+            });
+
+            return NextResponse.json(serializeRecommendation(updated));
+        }
+
+        if (action === 'roadmap_progress') {
+            const progress = body.roadmapProgress && typeof body.roadmapProgress === 'object'
+                ? body.roadmapProgress
+                : {};
+
+            const updated = await prisma.careerRecommendation.update({
+                where: { id: recommendationId },
+                data: {
+                    roadmapProgress: progress,
+                },
+            });
+
+            return NextResponse.json(serializeRecommendation(updated));
+        }
+
         // If already has full details, just return it
         if (existing.hasFullDetails) {
-            return NextResponse.json({
-                id: existing.id,
-                predictions: existing.predictions,
-                topCareer: existing.topCareer,
-                hasFullDetails: existing.hasFullDetails,
-                roadmap: existing.roadmap,
-                colleges: existing.colleges,
-                summary: existing.summary,
-                immediateActions: existing.immediateActions,
-                createdAt: existing.createdAt.toISOString(),
-            });
+            return NextResponse.json(serializeRecommendation(existing));
         }
 
         // Fetch user profile for the AI call
@@ -268,17 +310,7 @@ export async function PATCH(request: Request) {
             },
         });
 
-        return NextResponse.json({
-            id: updated.id,
-            predictions: updated.predictions,
-            topCareer: updated.topCareer,
-            hasFullDetails: updated.hasFullDetails,
-            roadmap: updated.roadmap,
-            colleges: updated.colleges,
-            summary: updated.summary,
-            immediateActions: updated.immediateActions,
-            createdAt: updated.createdAt.toISOString(),
-        });
+        return NextResponse.json(serializeRecommendation(updated));
     } catch (error) {
         console.error('Error getting full details:', error);
         return NextResponse.json(

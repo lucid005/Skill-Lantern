@@ -8,6 +8,7 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const logoHref = pathname.startsWith("/dashboard") ? "/dashboard" : "/";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,10 +29,10 @@ export default function Navbar() {
           : "bg-transparent"
       }`}
     >
-      <nav className="container-custom">
+      <nav className="container-custom"> 
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={logoHref} className="flex items-center gap-2">
             <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">SL</span>
             </div>

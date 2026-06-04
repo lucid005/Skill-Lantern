@@ -6,6 +6,11 @@ Usage:
     python train_model.py
 """
 
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, cross_val_score
@@ -22,11 +27,27 @@ import os
 import re
 from collections import Counter
 
+from app.models.career_predictor import CAREER_CATEGORIES, CareerPredictor
+from app.models.schemas import EducationLevel, UserProfile
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except AttributeError:
+    pass
+
 # Paths
 DATA_PATH = "app/data/career_recommender.csv"
 MODEL_PATH = "app/models/xgboost_model.pkl"
 LABEL_ENCODER_PATH = "app/models/label_encoder.pkl"
 FEATURE_COLUMNS_PATH = "app/models/feature_columns.pkl"
+ENCODERS_PATH = "app/models/encoders.pkl"
+EVALUATION_PATH = "app/data/model_evaluation.json"
+
+
+def safe_feature_name(prefix: str, value: str, max_length: int = 45) -> str:
+    """Create stable feature names shared by training and inference."""
+    cleaned = re.sub(r"[^a-z0-9]+", "_", str(value).lower()).strip("_")
+    return f"{prefix}_{cleaned[:max_length]}"
 
 
 def load_and_preprocess_data(filepath: str) -> pd.DataFrame:
@@ -84,6 +105,10 @@ def categorize_career(job_title: str) -> str:
     
     # Career category mappings - ordered from most specific to least specific
     categories = {
+        "Legal Professional": ["lawyer", "legal", "litigation", "advocate",
+                               "attorney", "counsel", "company secretary",
+                               "ipr", "criminal law", "corporate law",
+                               "disputes lawyer"],
         "Software Engineer": ["software engineer", "software developer", "programmer", 
                              "software", "full stack", "backend developer", 
                              "frontend developer", "web developer", "application developer",
@@ -153,6 +178,72 @@ def categorize_career(job_title: str) -> str:
     return None  # Will be filtered out - no guessing
 
 
+def parse_multi_value(value) -> list:
+    """Parse semicolon/comma/newline separated survey values."""
+    if pd.isna(value):
+        return []
+    text = str(value).strip()
+    if not text or text.upper() in {"NO", "NA", "N/A"}:
+        return []
+    values = re.split(r'[;,\n]', text)
+    return [item.strip() for item in values if item.strip() and len(item.strip()) > 1]
+
+
+def row_to_user_profile(row: pd.Series) -> UserProfile:
+    """Convert a raw survey row into the API's UserProfile shape."""
+    cgpa = pd.to_numeric(
+        row.get("What was the average CGPA or Percentage obtained in under graduation?", None),
+        errors="coerce"
+    )
+    cgpa_value = float(cgpa) if pd.notna(cgpa) else None
+
+    return UserProfile(
+        education_level=EducationLevel.BACHELORS,
+        gender=str(row.get("What is your gender?", "") or "").strip() or None,
+        ug_course=str(row.get("What was your course in UG?", "") or "").strip() or None,
+        specialization=str(row.get("What is your UG specialization? Major Subject (Eg; Mathematics)", "") or "").strip() or None,
+        skills=parse_multi_value(row.get("What are your skills ? (Select multiple if necessary)", "")),
+        interests=parse_multi_value(row.get("What are your interests?", "")),
+        cgpa=cgpa_value,
+        certifications=parse_multi_value(row.get("If yes, please specify your certificate course title.", "")),
+        location="Nepal",
+    )
+
+
+def add_rule_based_labels_and_features(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
+    """
+    Add recommendation-oriented features from the deterministic rule engine.
+
+    The survey's job-title label is sparse and noisy. For rows without a usable
+    job title, the deterministic rules provide weak labels from education,
+    skills, and interests so the model learns the recommendation task rather
+    than only first-job-title classification.
+    """
+    predictor = CareerPredictor()
+    feature_cols = [safe_feature_name("rule_score", career) for career in CAREER_CATEGORIES]
+    fallback_labels = []
+    fallback_confidences = []
+    rule_feature_rows = []
+
+    for _, row in df.iterrows():
+        profile = row_to_user_profile(row)
+        predictions = predictor._predict_rule_based(profile, top_n=len(CAREER_CATEGORIES))
+        score_by_career = {prediction.career: prediction.confidence for prediction in predictions}
+        rule_features = {}
+
+        fallback_labels.append(predictions[0].career if predictions else None)
+        fallback_confidences.append(predictions[0].confidence if predictions else 0.0)
+        for career in CAREER_CATEGORIES:
+            rule_features[safe_feature_name("rule_score", career)] = score_by_career.get(career, 0.0)
+        rule_feature_rows.append(rule_features)
+
+    rule_feature_df = pd.DataFrame(rule_feature_rows, index=df.index)
+    df = pd.concat([df, rule_feature_df], axis=1)
+    df["rule_based_career_category"] = fallback_labels
+    df["rule_based_career_confidence"] = fallback_confidences
+    return df, feature_cols
+
+
 def encode_skills(df: pd.DataFrame) -> pd.DataFrame:
     """Encode skills column into binary features."""
     skills_col = "What are your skills ? (Select multiple if necessary)"
@@ -186,9 +277,11 @@ def encode_skills(df: pd.DataFrame) -> pd.DataFrame:
         print(f"   - {skill}: {count}")
     
     # Create binary columns for top skills
-    for skill in top_skills:
-        safe_name = f"skill_{skill.replace(' ', '_').replace('-', '_')[:30]}"
-        df[safe_name] = df['skills_list'].apply(lambda x: 1 if skill in x else 0)
+    skill_features = {
+        f"skill_{skill.replace(' ', '_').replace('-', '_')[:30]}": df['skills_list'].apply(lambda x, skill=skill: 1 if skill in x else 0)
+        for skill in top_skills
+    }
+    df = pd.concat([df, pd.DataFrame(skill_features, index=df.index)], axis=1)
     
     return df, top_skills
 
@@ -225,9 +318,11 @@ def encode_interests(df: pd.DataFrame) -> pd.DataFrame:
         print(f"   - {interest}: {count}")
     
     # Create binary columns
-    for interest in top_interests:
-        safe_name = f"interest_{interest.replace(' ', '_').replace('-', '_')[:30]}"
-        df[safe_name] = df['interests_list'].apply(lambda x: 1 if interest in x else 0)
+    interest_features = {
+        f"interest_{interest.replace(' ', '_').replace('-', '_')[:30]}": df['interests_list'].apply(lambda x, interest=interest: 1 if interest in x else 0)
+        for interest in top_interests
+    }
+    df = pd.concat([df, pd.DataFrame(interest_features, index=df.index)], axis=1)
     
     return df, top_interests
 
@@ -241,12 +336,17 @@ def prepare_features(df: pd.DataFrame) -> tuple:
     # Extract target variable (career)
     df['job_title'] = extract_job_title(df)
     df['career_category'] = df['job_title'].apply(categorize_career)
+    df, rule_feature_cols = add_rule_based_labels_and_features(df)
+    df['career_category'] = df['career_category'].fillna(df['rule_based_career_category'])
+
+    weak_label_count = int(df["job_title"].apply(categorize_career).isna().sum())
+    print(f"\n🔁 Added {weak_label_count} weak recommendation labels for rows without usable job titles")
     
-    # Remove rows where career_category is None (students, unemployed, unknown)
+    # Remove rows where both job-title and rule-based labeling failed.
     before_count = len(df)
     df = df[df['career_category'].notna()].reset_index(drop=True)
     removed_count = before_count - len(df)
-    print(f"\n🗑️ Removed {removed_count} rows with no clear career (students/unemployed/unknown)")
+    print(f"\n🗑️ Removed {removed_count} rows with no usable career label")
     print(f"📊 Remaining records: {len(df)}")
     
     # Remove career categories with fewer than 3 samples (can't train reliably)
@@ -305,6 +405,9 @@ def prepare_features(df: pd.DataFrame) -> tuple:
     # Add interest columns  
     interest_cols = [c for c in df.columns if c.startswith('interest_')]
     feature_cols.extend(interest_cols)
+
+    # Add deterministic recommendation signals as model features.
+    feature_cols.extend(rule_feature_cols)
     
     print(f"\n📊 Total features: {len(feature_cols)}")
     
@@ -319,7 +422,16 @@ def prepare_features(df: pd.DataFrame) -> tuple:
     for i, cls in enumerate(le_career.classes_):
         print(f"   {i}: {cls}")
     
-    return X, y, feature_cols, le_career, le_gender, le_course, top_skills, top_interests
+    metadata = {
+        "source_rows": int(before_count),
+        "usable_rows": int(len(df)),
+        "removed_rows": int(removed_count),
+        "career_distribution": {
+            career: int(count) for career, count in df["career_category"].value_counts().items()
+        },
+    }
+
+    return X, y, feature_cols, le_career, le_gender, le_course, top_skills, top_interests, metadata
 
 
 def train_model(X: np.ndarray, y: np.ndarray, feature_cols: list):
@@ -340,21 +452,20 @@ def train_model(X: np.ndarray, y: np.ndarray, feature_cols: list):
     # Create XGBoost classifier with improved hyperparameters
     n_classes = len(np.unique(y_train))
     model = xgb.XGBClassifier(
-        n_estimators=500,
-        max_depth=8,
+        n_estimators=350,
+        max_depth=5,
         learning_rate=0.05,
-        subsample=0.85,
-        colsample_bytree=0.85,
-        min_child_weight=3,
-        gamma=0.1,
-        reg_alpha=0.1,
-        reg_lambda=1.0,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        min_child_weight=2,
+        gamma=0.05,
+        reg_alpha=0.05,
+        reg_lambda=1.5,
         random_state=42,
         n_jobs=-1,
         objective='multi:softprob',
         num_class=n_classes,
         eval_metric='mlogloss',
-        use_label_encoder=False
     )
     
     print("\n⏳ Training model...")
@@ -367,7 +478,7 @@ def train_model(X: np.ndarray, y: np.ndarray, feature_cols: list):
     return model, X_train, X_test, y_train, y_test
 
 
-def evaluate_model(model, X_test, y_test, le_career):
+def evaluate_model(model, X_test, y_test, le_career, feature_cols):
     """Evaluate the trained model and print metrics."""
     print("\n" + "=" * 60)
     print("📊 MODEL EVALUATION METRICS")
@@ -380,11 +491,20 @@ def evaluate_model(model, X_test, y_test, le_career):
     # Accuracy
     accuracy = accuracy_score(y_test, y_pred)
     print(f"\n🎯 Overall Accuracy: {accuracy * 100:.2f}%")
+
+    labels = list(range(len(le_career.classes_)))
+    top_3_acc = None
+    top_5_acc = None
     
     # Top-k Accuracy
     if len(le_career.classes_) > 2:
-        top_3_acc = top_k_accuracy_score(y_test, y_pred_proba, k=3)
-        top_5_acc = top_k_accuracy_score(y_test, y_pred_proba, k=min(5, len(le_career.classes_)))
+        top_3_acc = top_k_accuracy_score(y_test, y_pred_proba, k=3, labels=labels)
+        top_5_acc = top_k_accuracy_score(
+            y_test,
+            y_pred_proba,
+            k=min(5, len(le_career.classes_)),
+            labels=labels
+        )
         print(f"🎯 Top-3 Accuracy: {top_3_acc * 100:.2f}%")
         print(f"🎯 Top-5 Accuracy: {top_5_acc * 100:.2f}%")
     
@@ -397,6 +517,15 @@ def evaluate_model(model, X_test, y_test, le_career):
         zero_division=0
     )
     print(report)
+
+    report_dict = classification_report(
+        y_test,
+        y_pred,
+        labels=labels,
+        target_names=le_career.classes_,
+        zero_division=0,
+        output_dict=True,
+    )
     
     # Feature Importance
     print("\n🔝 Top 15 Most Important Features:")
@@ -404,10 +533,23 @@ def evaluate_model(model, X_test, y_test, le_career):
     importance = model.feature_importances_
     indices = np.argsort(importance)[::-1][:15]
     
+    top_features = []
     for i, idx in enumerate(indices):
-        print(f"   {i+1}. Feature {idx}: {importance[idx]:.4f}")
-    
-    return accuracy
+        feature_name = feature_cols[idx] if idx < len(feature_cols) else f"feature_{idx}"
+        top_features.append({
+            "rank": i + 1,
+            "feature": feature_name,
+            "importance": float(importance[idx]),
+        })
+        print(f"   {i+1}. {feature_name}: {importance[idx]:.4f}")
+
+    return {
+        "accuracy": float(accuracy),
+        "top_3_accuracy": float(top_3_acc) if top_3_acc is not None else None,
+        "top_5_accuracy": float(top_5_acc) if top_5_acc is not None else None,
+        "classification_report": report_dict,
+        "top_features": top_features,
+    }
 
 
 def cross_validate_model(X, y):
@@ -416,25 +558,37 @@ def cross_validate_model(X, y):
     print("🔄 CROSS-VALIDATION (5-Fold)")
     print("=" * 60)
     
+    min_class_count = min(Counter(y).values())
+    folds = min(5, min_class_count)
+    if folds < 2:
+        print("\n⚠️ Skipping cross-validation because at least one class has fewer than 2 samples.")
+        return None
+
     model = xgb.XGBClassifier(
         n_estimators=100,
-        max_depth=6,
+        max_depth=5,
         learning_rate=0.1,
         random_state=42,
         n_jobs=-1,
-        use_label_encoder=False,
-        eval_metric='mlogloss'
+        objective='multi:softprob',
+        num_class=len(np.unique(y)),
+        eval_metric='mlogloss',
     )
     
-    scores = cross_val_score(model, X, y, cv=5, scoring='accuracy')
+    scores = cross_val_score(model, X, y, cv=folds, scoring='accuracy')
     
     print(f"\n📊 Cross-Validation Scores:")
     for i, score in enumerate(scores, 1):
         print(f"   Fold {i}: {score * 100:.2f}%")
     
-    print(f"\n🎯 Mean CV Accuracy: {scores.mean() * 100:.2f}% (+/- {scores.std() * 2 * 100:.2f}%)")
+    print(f"\n🎯 Mean CV Accuracy ({folds}-fold): {scores.mean() * 100:.2f}% (+/- {scores.std() * 2 * 100:.2f}%)")
     
-    return scores.mean()
+    return {
+        "folds": int(folds),
+        "scores": [float(score) for score in scores],
+        "mean_accuracy": float(scores.mean()),
+        "std_accuracy": float(scores.std()),
+    }
 
 
 def save_model(model, le_career, feature_cols, le_gender=None, le_course=None, top_skills=None, top_interests=None):
@@ -459,19 +613,138 @@ def save_model(model, le_career, feature_cols, le_gender=None, le_course=None, t
     print(f"✅ Feature columns saved to: {FEATURE_COLUMNS_PATH}")
     
     # Save additional encoders for inference
-    encoders_path = os.path.join(os.path.dirname(MODEL_PATH), "encoders.pkl")
     encoders = {
         'le_gender': le_gender,
         'le_course': le_course,
         'top_skills': top_skills,
         'top_interests': top_interests
     }
-    joblib.dump(encoders, encoders_path)
-    print(f"✅ Additional encoders saved to: {encoders_path}")
+    joblib.dump(encoders, ENCODERS_PATH)
+    print(f"✅ Additional encoders saved to: {ENCODERS_PATH}")
     
     # Print model size
     model_size = os.path.getsize(MODEL_PATH) / 1024
     print(f"\n📦 Model size: {model_size:.2f} KB")
+
+
+def evaluate_viva_profiles() -> list:
+    """Evaluate the saved model on representative, explainable demo profiles."""
+    from app.models.career_predictor import CareerPredictor
+    from app.models.schemas import UserProfile, EducationLevel
+
+    predictor = CareerPredictor()
+    predictor.load_model()
+
+    profiles = [
+        {
+            "label": "CS/ML student",
+            "expected": "Data Scientist",
+            "profile": UserProfile(
+                education_level=EducationLevel.BACHELORS,
+                ug_course="BCA",
+                specialization="Computer Science",
+                skills=["Python", "Machine Learning", "SQL", "Data Visualization"],
+                interests=["Artificial Intelligence", "Data Analysis"],
+                cgpa=78.0,
+                location="Nepal",
+            ),
+        },
+        {
+            "label": "MBA marketing student",
+            "expected": "Marketing Specialist",
+            "profile": UserProfile(
+                education_level=EducationLevel.MASTERS,
+                ug_course="MBA",
+                specialization="Marketing",
+                skills=["Digital Marketing", "SEO", "Content Writing", "Social Media"],
+                interests=["Sales", "Brand Management"],
+                cgpa=72.0,
+                location="Nepal",
+            ),
+        },
+        {
+            "label": "UI/UX design student",
+            "expected": "UI/UX Designer",
+            "profile": UserProfile(
+                education_level=EducationLevel.BACHELORS,
+                ug_course="B.Des",
+                specialization="Design",
+                skills=["Figma", "UI Design", "Prototyping", "CSS", "HTML"],
+                interests=["User Experience", "Visual Design"],
+                cgpa=80.0,
+                location="Nepal",
+            ),
+        },
+        {
+            "label": "Java backend developer",
+            "expected": "Software Engineer",
+            "profile": UserProfile(
+                education_level=EducationLevel.BACHELORS,
+                ug_course="B.E",
+                specialization="Computer Engineering",
+                skills=["Java", "Spring Boot", "SQL", "Git"],
+                interests=["Software Development", "Backend Systems"],
+                cgpa=75.0,
+                location="Nepal",
+            ),
+        },
+        {
+            "label": "Healthcare student",
+            "expected": "Healthcare Professional",
+            "profile": UserProfile(
+                education_level=EducationLevel.BACHELORS,
+                ug_course="MBBS",
+                specialization="Medicine",
+                skills=["Patient Care", "Communication"],
+                interests=["Healthcare", "Medical Research"],
+                cgpa=82.0,
+                location="Nepal",
+            ),
+        },
+        {
+            "label": "LLM criminal law student",
+            "expected": "Legal Professional",
+            "profile": UserProfile(
+                education_level=EducationLevel.MASTERS,
+                ug_course="LLM",
+                specialization="Criminal Law",
+                skills=["Legal Research", "Legal Writing", "Critical Thinking"],
+                interests=["Law", "Research", "Litigation & Legal Service"],
+                cgpa=76.0,
+                location="Nepal",
+            ),
+        },
+    ]
+
+    results = []
+    print("\n" + "=" * 60)
+    print("🧪 REPRESENTATIVE PROFILE CHECKS")
+    print("=" * 60)
+    for item in profiles:
+        predictions = predictor.predict(item["profile"], top_n=5)
+        top = predictions[0].career if predictions else None
+        passed = top == item["expected"]
+        print(f"\n{item['label']} -> expected: {item['expected']} | top: {top} | {'PASS' if passed else 'REVIEW'}")
+        for index, prediction in enumerate(predictions, 1):
+            print(f"  {index}. {prediction.career} ({prediction.confidence:.3f})")
+
+        results.append({
+            "label": item["label"],
+            "expected_top": item["expected"],
+            "actual_top": top,
+            "passed": passed,
+            "predictions": [prediction.model_dump() for prediction in predictions],
+        })
+
+    return results
+
+
+def save_evaluation_report(report: dict) -> None:
+    """Persist metrics for viva/reporting and future comparison."""
+    Path(EVALUATION_PATH).parent.mkdir(parents=True, exist_ok=True)
+    with open(EVALUATION_PATH, "w", encoding="utf-8") as file:
+        json.dump(report, file, indent=2)
+    print(f"\n✅ Evaluation report saved to: {EVALUATION_PATH}")
 
 
 def main():
@@ -484,19 +757,39 @@ def main():
     df = load_and_preprocess_data(DATA_PATH)
     
     # Prepare features
-    X, y, feature_cols, le_career, le_gender, le_course, top_skills, top_interests = prepare_features(df)
+    X, y, feature_cols, le_career, le_gender, le_course, top_skills, top_interests, dataset_metadata = prepare_features(df)
     
     # Cross-validation
-    cv_accuracy = cross_validate_model(X, y)
+    cv_results = cross_validate_model(X, y)
     
     # Train final model
     model, X_train, X_test, y_train, y_test = train_model(X, y, feature_cols)
     
     # Evaluate
-    test_accuracy = evaluate_model(model, X_test, y_test, le_career)
+    test_results = evaluate_model(model, X_test, y_test, le_career, feature_cols)
     
     # Save
     save_model(model, le_career, feature_cols, le_gender, le_course, top_skills, top_interests)
+
+    representative_results = evaluate_viva_profiles()
+    evaluation_report = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_path": DATA_PATH,
+        "model_path": MODEL_PATH,
+        "dataset": dataset_metadata,
+        "feature_count": len(feature_cols),
+        "target_classes": list(le_career.classes_),
+        "cross_validation": cv_results,
+        "holdout": test_results,
+        "representative_profiles": representative_results,
+    }
+    save_evaluation_report(evaluation_report)
+
+    cv_summary = (
+        f"{cv_results['mean_accuracy'] * 100:.2f}%"
+        if cv_results
+        else "not available"
+    )
     
     print("\n" + "=" * 60)
     print("✨ TRAINING COMPLETE!")
@@ -507,9 +800,12 @@ def main():
    - Test samples: {len(X_test)}
    - Features: {len(feature_cols)}
    - Career categories: {len(le_career.classes_)}
-   - Cross-validation accuracy: {cv_accuracy * 100:.2f}%
-   - Test accuracy: {test_accuracy * 100:.2f}%
+   - Cross-validation accuracy: {cv_summary}
+   - Test accuracy: {test_results['accuracy'] * 100:.2f}%
+   - Top-3 accuracy: {test_results['top_3_accuracy'] * 100:.2f}%
+   - Top-5 accuracy: {test_results['top_5_accuracy'] * 100:.2f}%
    - Model saved to: {MODEL_PATH}
+   - Evaluation saved to: {EVALUATION_PATH}
 
 🚀 The model is now ready to use!
    Restart the FastAPI server to load the new model.

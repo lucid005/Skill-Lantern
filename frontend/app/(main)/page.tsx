@@ -39,7 +39,7 @@ export default function Home() {
         </svg>
       ),
       title: "Market Insights",
-      description: "Access real-time job market data, salary ranges, growth projections, and demand trends for your recommended career paths.",
+      description: "Review practical career context, skill expectations, and growth pathways for your recommended career paths.",
     },
     {
       icon: (
@@ -85,9 +85,9 @@ export default function Home() {
   ];
 
   const stats = [
-    { value: "10K+", label: "Career Paths Analyzed" },
-    { value: "95%", label: "Recommendation Accuracy" },
-    { value: "50+", label: "Industries Covered" },
+    { value: "25", label: "Career Categories" },
+    { value: "5", label: "Ranked Matches" },
+    { value: "1K+", label: "College Records" },
     { value: "24/7", label: "AI-Powered Support" },
   ];
 
@@ -339,7 +339,7 @@ export default function Home() {
             </Link>
             
             <p className="text-sm text-neutral-500 mt-6">
-              No credit card required • Free forever for basic features
+              Create an account to save your profile and recommendation history
             </p>
           </MotionSection>
         </div>

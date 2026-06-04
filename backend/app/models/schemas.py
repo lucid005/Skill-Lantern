@@ -159,6 +159,8 @@ class HealthResponse(BaseModel):
     status: str = Field(default="healthy")
     gemini_status: str = Field(default="unknown")
     model_loaded: bool = Field(default=False)
+    college_data_loaded: bool = Field(default=False)
+    career_data_loaded: bool = Field(default=False)
     version: str = Field(default="1.0.0")
 
 

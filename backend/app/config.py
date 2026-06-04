@@ -3,9 +3,9 @@ Application Configuration
 Loads settings from environment variables with sensible defaults.
 """
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
-from typing import List
-import os
+from typing import Any, List
 
 
 class Settings(BaseSettings):
@@ -33,6 +33,18 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> List[str]:
         """Parse CORS origins from comma-separated string."""
         return [origin.strip() for origin in self.cors_origins.split(",")]
+
+    @field_validator("debug", mode="before")
+    @classmethod
+    def parse_debug_mode(cls, value: Any) -> Any:
+        """Accept boolean-like values plus deployment mode names."""
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"true", "1", "yes", "y", "on", "debug", "dev", "development", "local"}:
+                return True
+            if normalized in {"false", "0", "no", "n", "off", "release", "prod", "production"}:
+                return False
+        return value
     
     class Config:
         env_file = ".env"

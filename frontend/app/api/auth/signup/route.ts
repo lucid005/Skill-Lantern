@@ -36,6 +36,27 @@ export async function POST(request: Request) {
             );
         }
 
+        if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return NextResponse.json(
+                { error: 'Please enter a valid email address' },
+                { status: 400 }
+            );
+        }
+
+        if (typeof password !== 'string' || password.length < 8) {
+            return NextResponse.json(
+                { error: 'Password must be at least 8 characters long' },
+                { status: 400 }
+            );
+        }
+
+        if (body.confirmPassword !== undefined && password !== body.confirmPassword) {
+            return NextResponse.json(
+                { error: 'Passwords do not match' },
+                { status: 400 }
+            );
+        }
+
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
             where: { email },

@@ -1,0 +1,496 @@
+{
+  "generated_at": "2026-05-31T11:51:12.606374+00:00",
+  "data_path": "app/data/career_recommender.csv",
+  "model_path": "app/models/xgboost_model.pkl",
+  "dataset": {
+    "source_rows": 1195,
+    "usable_rows": 1194,
+    "removed_rows": 0,
+    "career_distribution": {
+      "Software Engineer": 384,
+      "Data Analyst": 126,
+      "Business Manager": 117,
+      "Marketing Specialist": 81,
+      "Mechanical Engineer": 79,
+      "Data Scientist": 77,
+      "Electrical Engineer": 50,
+      "Teacher/Educator": 45,
+      "Financial Analyst": 41,
+      "Research Scientist": 31,
+      "Civil Engineer": 31,
+      "IT Consultant": 25,
+      "Legal Professional": 21,
+      "HR Manager": 16,
+      "UI/UX Designer": 16,
+      "Project Manager": 12,
+      "Healthcare Professional": 9,
+      "Quality Assurance Engineer": 8,
+      "DevOps Engineer": 6,
+      "Product Manager": 6,
+      "Cybersecurity Analyst": 6,
+      "Database Administrator": 4,
+      "Network Engineer": 3
+    }
+  },
+  "feature_count": 110,
+  "target_classes": [
+    "Business Manager",
+    "Civil Engineer",
+    "Cybersecurity Analyst",
+    "Data Analyst",
+    "Data Scientist",
+    "Database Administrator",
+    "DevOps Engineer",
+    "Electrical Engineer",
+    "Financial Analyst",
+    "HR Manager",
+    "Healthcare Professional",
+    "IT Consultant",
+    "Legal Professional",
+    "Marketing Specialist",
+    "Mechanical Engineer",
+    "Network Engineer",
+    "Product Manager",
+    "Project Manager",
+    "Quality Assurance Engineer",
+    "Research Scientist",
+    "Software Engineer",
+    "Teacher/Educator",
+    "UI/UX Designer"
+  ],
+  "cross_validation": {
+    "folds": 3,
+    "scores": [
+      0.6005025125628141,
+      0.585427135678392,
+      0.6532663316582915
+    ],
+    "mean_accuracy": 0.6130653266331659,
+    "std_accuracy": 0.029085017343694047
+  },
+  "holdout": {
+    "accuracy": 0.6485355648535565,
+    "top_3_accuracy": 0.8619246861924686,
+    "top_5_accuracy": 0.9205020920502092,
+    "classification_report": {
+      "Business Manager": {
+        "precision": 0.5161290322580645,
+        "recall": 0.6666666666666666,
+        "f1-score": 0.5818181818181818,
+        "support": 24.0
+      },
+      "Civil Engineer": {
+        "precision": 0.8,
+        "recall": 0.6666666666666666,
+        "f1-score": 0.7272727272727273,
+        "support": 6.0
+      },
+      "Cybersecurity Analyst": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 1.0
+      },
+      "Data Analyst": {
+        "precision": 0.6875,
+        "recall": 0.44,
+        "f1-score": 0.5365853658536586,
+        "support": 25.0
+      },
+      "Data Scientist": {
+        "precision": 0.6,
+        "recall": 0.75,
+        "f1-score": 0.6666666666666666,
+        "support": 16.0
+      },
+      "Database Administrator": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 1.0
+      },
+      "DevOps Engineer": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 1.0
+      },
+      "Electrical Engineer": {
+        "precision": 0.75,
+        "recall": 0.6,
+        "f1-score": 0.6666666666666666,
+        "support": 10.0
+      },
+      "Financial Analyst": {
+        "precision": 0.8,
+        "recall": 0.5,
+        "f1-score": 0.6153846153846154,
+        "support": 8.0
+      },
+      "HR Manager": {
+        "precision": 0.3333333333333333,
+        "recall": 0.6666666666666666,
+        "f1-score": 0.4444444444444444,
+        "support": 3.0
+      },
+      "Healthcare Professional": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1-score": 0.6666666666666666,
+        "support": 2.0
+      },
+      "IT Consultant": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 5.0
+      },
+      "Legal Professional": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 4.0
+      },
+      "Marketing Specialist": {
+        "precision": 0.6428571428571429,
+        "recall": 0.5625,
+        "f1-score": 0.6,
+        "support": 16.0
+      },
+      "Mechanical Engineer": {
+        "precision": 0.6923076923076923,
+        "recall": 0.5625,
+        "f1-score": 0.6206896551724138,
+        "support": 16.0
+      },
+      "Network Engineer": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 1.0
+      },
+      "Product Manager": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 1.0
+      },
+      "Project Manager": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 2.0
+      },
+      "Quality Assurance Engineer": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 2.0
+      },
+      "Research Scientist": {
+        "precision": 0.6,
+        "recall": 1.0,
+        "f1-score": 0.75,
+        "support": 6.0
+      },
+      "Software Engineer": {
+        "precision": 0.6956521739130435,
+        "recall": 0.8311688311688312,
+        "f1-score": 0.757396449704142,
+        "support": 77.0
+      },
+      "Teacher/Educator": {
+        "precision": 0.42857142857142855,
+        "recall": 0.3333333333333333,
+        "f1-score": 0.375,
+        "support": 9.0
+      },
+      "UI/UX Designer": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 3.0
+      },
+      "accuracy": 0.6485355648535565,
+      "macro avg": {
+        "precision": 0.5454935131843784,
+        "recall": 0.5251957462827028,
+        "f1-score": 0.5221126712891383,
+        "support": 239.0
+      },
+      "weighted avg": {
+        "precision": 0.6328853321559754,
+        "recall": 0.6485355648535565,
+        "f1-score": 0.6292491418689065,
+        "support": 239.0
+      }
+    },
+    "top_features": [
+      {
+        "rank": 1,
+        "feature": "rule_score_legal_professional",
+        "importance": 0.056350644677877426
+      },
+      {
+        "rank": 2,
+        "feature": "skill_ai",
+        "importance": 0.026351183652877808
+      },
+      {
+        "rank": 3,
+        "feature": "rule_score_teacher_educator",
+        "importance": 0.0240520890802145
+      },
+      {
+        "rank": 4,
+        "feature": "interest_teaching",
+        "importance": 0.020528286695480347
+      },
+      {
+        "rank": 5,
+        "feature": "skill_subject_knowledge",
+        "importance": 0.01995205134153366
+      },
+      {
+        "rank": 6,
+        "feature": "rule_score_cybersecurity_analyst",
+        "importance": 0.017062751576304436
+      },
+      {
+        "rank": 7,
+        "feature": "interest_sales/marketing",
+        "importance": 0.017046751454472542
+      },
+      {
+        "rank": 8,
+        "feature": "skill_teaching",
+        "importance": 0.01675518788397312
+      },
+      {
+        "rank": 9,
+        "feature": "rule_score_electrical_engineer",
+        "importance": 0.016436584293842316
+      },
+      {
+        "rank": 10,
+        "feature": "rule_score_data_scientist",
+        "importance": 0.016061916947364807
+      },
+      {
+        "rank": 11,
+        "feature": "rule_score_marketing_specialist",
+        "importance": 0.0157611183822155
+      },
+      {
+        "rank": 12,
+        "feature": "interest_information_technology",
+        "importance": 0.015349365770816803
+      },
+      {
+        "rank": 13,
+        "feature": "rule_score_healthcare_professional",
+        "importance": 0.01524379849433899
+      },
+      {
+        "rank": 14,
+        "feature": "rule_score_software_engineer",
+        "importance": 0.015239901840686798
+      },
+      {
+        "rank": 15,
+        "feature": "rule_score_data_analyst",
+        "importance": 0.014688857831060886
+      }
+    ]
+  },
+  "representative_profiles": [
+    {
+      "label": "CS/ML student",
+      "expected_top": "Data Scientist",
+      "actual_top": "Data Scientist",
+      "passed": true,
+      "predictions": [
+        {
+          "career": "Data Scientist",
+          "confidence": 0.9194322228431702,
+          "description": "Analyze complex data to help businesses make decisions"
+        },
+        {
+          "career": "Software Engineer",
+          "confidence": 0.0660950243473053,
+          "description": "Design, develop, and maintain software applications"
+        },
+        {
+          "career": "Data Analyst",
+          "confidence": 0.00436918530613184,
+          "description": "Interpret data and turn it into actionable insights"
+        },
+        {
+          "career": "Quality Assurance Engineer",
+          "confidence": 0.0020082262344658375,
+          "description": "Test and ensure software quality"
+        },
+        {
+          "career": "Legal Professional",
+          "confidence": 0.0011979928240180016,
+          "description": "Provide legal advice, research, representation, and compliance support"
+        }
+      ]
+    },
+    {
+      "label": "MBA marketing student",
+      "expected_top": "Marketing Specialist",
+      "actual_top": "Marketing Specialist",
+      "passed": true,
+      "predictions": [
+        {
+          "career": "Marketing Specialist",
+          "confidence": 0.9180244207382202,
+          "description": "Plan and execute marketing strategies"
+        },
+        {
+          "career": "Data Analyst",
+          "confidence": 0.02581379935145378,
+          "description": "Interpret data and turn it into actionable insights"
+        },
+        {
+          "career": "Software Engineer",
+          "confidence": 0.019714634865522385,
+          "description": "Design, develop, and maintain software applications"
+        },
+        {
+          "career": "Mechanical Engineer",
+          "confidence": 0.006420934572815895,
+          "description": "Design and build mechanical systems"
+        },
+        {
+          "career": "Teacher/Educator",
+          "confidence": 0.003807215951383114,
+          "description": "Educate and mentor students"
+        }
+      ]
+    },
+    {
+      "label": "UI/UX design student",
+      "expected_top": "UI/UX Designer",
+      "actual_top": "UI/UX Designer",
+      "passed": true,
+      "predictions": [
+        {
+          "career": "UI/UX Designer",
+          "confidence": 0.95,
+          "description": "Design user interfaces and experiences"
+        },
+        {
+          "career": "Web Developer",
+          "confidence": 0.59,
+          "description": "Build and maintain websites and web applications"
+        },
+        {
+          "career": "Product Manager",
+          "confidence": 0.33,
+          "description": "Lead product development and strategy"
+        }
+      ]
+    },
+    {
+      "label": "Java backend developer",
+      "expected_top": "Software Engineer",
+      "actual_top": "Software Engineer",
+      "passed": true,
+      "predictions": [
+        {
+          "career": "Software Engineer",
+          "confidence": 0.8840715885162354,
+          "description": "Design, develop, and maintain software applications"
+        },
+        {
+          "career": "Data Analyst",
+          "confidence": 0.08765070140361786,
+          "description": "Interpret data and turn it into actionable insights"
+        },
+        {
+          "career": "Network Engineer",
+          "confidence": 0.008999166078865528,
+          "description": "Design and manage computer networks"
+        },
+        {
+          "career": "Marketing Specialist",
+          "confidence": 0.0051514082588255405,
+          "description": "Plan and execute marketing strategies"
+        },
+        {
+          "career": "IT Consultant",
+          "confidence": 0.0015469123609364033,
+          "description": "Advise organizations on technology solutions"
+        }
+      ]
+    },
+    {
+      "label": "Healthcare student",
+      "expected_top": "Healthcare Professional",
+      "actual_top": "Healthcare Professional",
+      "passed": true,
+      "predictions": [
+        {
+          "career": "Healthcare Professional",
+          "confidence": 0.5800983309745789,
+          "description": "Provide medical care and health services"
+        },
+        {
+          "career": "Data Analyst",
+          "confidence": 0.21226388216018677,
+          "description": "Interpret data and turn it into actionable insights"
+        },
+        {
+          "career": "Software Engineer",
+          "confidence": 0.03711462393403053,
+          "description": "Design, develop, and maintain software applications"
+        },
+        {
+          "career": "Teacher/Educator",
+          "confidence": 0.024229036644101143,
+          "description": "Educate and mentor students"
+        },
+        {
+          "career": "Business Manager",
+          "confidence": 0.020335061475634575,
+          "description": "Lead business operations and teams"
+        }
+      ]
+    },
+    {
+      "label": "LLM criminal law student",
+      "expected_top": "Legal Professional",
+      "actual_top": "Legal Professional",
+      "passed": true,
+      "predictions": [
+        {
+          "career": "Legal Professional",
+          "confidence": 0.9383009076118469,
+          "description": "Provide legal advice, research, representation, and compliance support"
+        },
+        {
+          "career": "Data Analyst",
+          "confidence": 0.04014703258872032,
+          "description": "Interpret data and turn it into actionable insights"
+        },
+        {
+          "career": "Marketing Specialist",
+          "confidence": 0.0045198374427855015,
+          "description": "Plan and execute marketing strategies"
+        },
+        {
+          "career": "Software Engineer",
+          "confidence": 0.003353504929691553,
+          "description": "Design, develop, and maintain software applications"
+        },
+        {
+          "career": "UI/UX Designer",
+          "confidence": 0.0021931587252765894,
+          "description": "Design user interfaces and experiences"
+        }
+      ]
+    }
+  ]
+}

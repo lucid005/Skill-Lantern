@@ -38,8 +38,8 @@ async def get_full_recommendation(request: FullRecommendationRequest):
     This is the main endpoint for complete career assessment.
     """
     try:
-        # Step 1: Predict careers
-        predicted_careers = career_predictor.predict(
+        # Step 1: Predict careers (LLM-refined for accuracy)
+        predicted_careers = await career_predictor.predict_with_llm(
             user_profile=request.user_profile,
             top_n=5
         )
@@ -77,7 +77,7 @@ async def get_quick_recommendation(request: CareerPredictionRequest):
     """
     try:
         # Get career predictions
-        predictions = career_predictor.predict(
+        predictions = await career_predictor.predict_with_llm(
             user_profile=request.user_profile,
             top_n=3
         )
@@ -110,7 +110,7 @@ async def stream_recommendation(request: FullRecommendationRequest):
             # Step 1: Career Prediction
             yield f"data: {json.dumps({'step': 'predicting', 'message': 'Analyzing your profile...'})}\n\n"
             
-            predictions = career_predictor.predict(
+            predictions = await career_predictor.predict_with_llm(
                 user_profile=request.user_profile,
                 top_n=5
             )

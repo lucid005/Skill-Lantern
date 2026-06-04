@@ -251,9 +251,8 @@ class GeminiService:
             
             client = self._get_client()
             
-            # Convert messages from Ollama format to Gemini format
-            # Ollama uses: [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]
-            # Gemini uses: [types.Content(role="user", parts=[types.Part(text="...")])]
+            # Convert generic chat messages to Gemini content objects.
+            # Gemini uses [types.Content(role="user", parts=[types.Part(text="...")])].
             gemini_contents = []
             for msg in messages:
                 role = msg.get("role", "user")

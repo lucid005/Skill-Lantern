@@ -2,7 +2,7 @@
 Career Router - Career Prediction Endpoints
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from typing import List
 import logging
 
@@ -24,26 +24,42 @@ router = APIRouter(prefix="/career", tags=["Career Prediction"])
     response_model=CareerPredictionResponse,
     responses={500: {"model": ErrorResponse}}
 )
-async def predict_career(request: CareerPredictionRequest):
+async def predict_career(
+    request: CareerPredictionRequest,
+    use_llm: bool = Query(
+        default=True,
+        description="Use Gemini LLM to refine predictions (slower but more accurate)"
+    )
+):
     """
     Predict suitable careers based on user profile.
     
-    Uses XGBoost model (if available) or rule-based matching
-    to suggest top careers based on skills, interests, and education.
+    Uses a hybrid approach:
+    1. XGBoost model (if available) or weighted rule-based matching for fast initial predictions
+    2. Gemini LLM refinement for contextual accuracy (when use_llm=true)
+    
+    Set use_llm=false for instant predictions without LLM (less accurate).
     """
     try:
-        # Get predictions
-        predictions = career_predictor.predict(
-            user_profile=request.user_profile,
-            top_n=5
-        )
+        # Get predictions — use LLM refinement if requested
+        if use_llm:
+            predictions = await career_predictor.predict_with_llm(
+                user_profile=request.user_profile,
+                top_n=5
+            )
+        else:
+            predictions = career_predictor.predict(
+                user_profile=request.user_profile,
+                top_n=5
+            )
         
         # Build user profile summary
         profile_summary = {
             "education": request.user_profile.education_level.value,
             "skills_count": len(request.user_profile.skills),
             "interests_count": len(request.user_profile.interests),
-            "specialization": request.user_profile.specialization
+            "specialization": request.user_profile.specialization,
+            "prediction_method": "hybrid_llm" if use_llm else "model_only"
         }
         
         return CareerPredictionResponse(

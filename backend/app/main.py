@@ -79,7 +79,7 @@ app = FastAPI(
     ## Features
     
     * **Career Prediction** - XGBoost-based career recommendations
-    * **Career Roadmap** - LLaMA-generated learning paths
+    * **Career Roadmap** - Gemini-generated learning paths
     * **College Recommendations** - Nepal college suggestions
     * **Full Guidance** - Complete career assessment
     
@@ -142,6 +142,8 @@ async def health_check():
         status="healthy",
         gemini_status="connected" if gemini_healthy else "disconnected",
         model_loaded=career_predictor.model_loaded,
+        college_data_loaded=college_service.loaded,
+        career_data_loaded=career_predictor.career_data is not None,
         version="1.0.0"
     )
 

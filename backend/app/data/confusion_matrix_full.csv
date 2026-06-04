@@ -1,0 +1,22 @@
+actual\predicted,Business Manager,Civil Engineer,Cybersecurity Analyst,Data Analyst,Data Scientist,Database Administrator,DevOps Engineer,Electrical Engineer,Financial Analyst,HR Manager,Healthcare Professional,IT Consultant,Marketing Specialist,Mechanical Engineer,Network Engineer,Project Manager,Quality Assurance Engineer,Research Scientist,Software Engineer,Teacher/Educator,UI/UX Designer
+Business Manager,0,0,0,1,0,0,0,0,1,0,0,0,2,0,0,0,0,0,1,0,0
+Civil Engineer,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,2,0,0
+Cybersecurity Analyst,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0
+Data Analyst,1,0,0,3,0,0,0,0,2,0,0,0,1,1,0,0,0,1,4,1,0
+Data Scientist,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0
+Database Administrator,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0
+DevOps Engineer,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Electrical Engineer,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0
+Financial Analyst,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1,0,0
+HR Manager,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0
+Healthcare Professional,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0
+IT Consultant,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0
+Marketing Specialist,2,0,0,0,0,0,0,0,1,0,0,0,3,0,0,0,0,0,2,0,0
+Mechanical Engineer,0,0,0,1,0,0,0,0,0,1,0,0,0,2,0,0,0,0,4,1,1
+Network Engineer,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0
+Project Manager,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0
+Quality Assurance Engineer,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0
+Research Scientist,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0
+Software Engineer,2,0,0,4,0,0,0,0,0,1,0,1,0,2,0,0,0,0,33,1,0
+Teacher/Educator,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,2,3,0
+UI/UX Designer,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0

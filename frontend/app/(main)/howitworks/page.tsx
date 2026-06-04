@@ -110,7 +110,7 @@ export default function HowItWorks() {
     },
     {
       question: "How accurate are the recommendations?",
-      answer: "Our AI model has a 95% accuracy rate in matching users with suitable careers. The recommendations are based on extensive data analysis and continuous learning from user outcomes.",
+      answer: "The system returns a ranked shortlist of career matches, then uses profile context and explanations to help users compare the strongest options. User feedback is saved so recommendation quality can be evaluated over time.",
     },
     {
       question: "Can I retake the assessment?",

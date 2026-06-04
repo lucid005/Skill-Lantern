@@ -11,7 +11,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-      allowDangerousEmailAccountLinking: true,
+      allowDangerousEmailAccountLinking:
+        process.env.AUTH_ALLOW_DANGEROUS_EMAIL_LINKING === 'true',
     }),
     Credentials({
       name: 'credentials',
@@ -57,7 +58,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     error: '/registration/login',
   },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ account }) {
       // Allow OAuth sign in
       if (account?.provider === 'google') {
         return true;
